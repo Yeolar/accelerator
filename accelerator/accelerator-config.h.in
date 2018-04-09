@@ -1,0 +1,15 @@
+#pragma once
+
+/* meta */
+
+#define ACC_PACKAGE "@PROJECT_NAME@"
+#define ACC_VERSION "@VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@"
+
+/* compile tests for keyword, lib, function, ... */
+
+#cmakedefine ACC_HAVE_XSI_STRERROR_R 1
+
+/* gflags */
+
+#cmakedefine ACC_GFLAGS_NAMESPACE @ACC_GFLAGS_NAMESPACE@
+#cmakedefine ACC_UNUSUAL_GFLAGS_NAMESPACE 1

@@ -1,6 +1,3 @@
-# Prerequisites
-*.d
-
 # Compiled Object files
 *.slo
 *.lo
@@ -20,6 +17,9 @@
 *.mod
 *.smod
 
+# Python compiled files
+*.py[cod]
+
 # Compiled Static libraries
 *.lai
 *.la
@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+/build/
+/accelerator/accelerator-config.h
