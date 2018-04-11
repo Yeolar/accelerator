@@ -49,10 +49,12 @@ flags = [
 '-isystem',
 '/usr/include/c++/4.9.2',
 '-isystem',
+'/usr/lib/gcc/x86_64-linux-gnu/4.9/include',
+'-isystem',
 '/usr/local/include',
 
 '-isystem', ROOT,
-'-isystem', os.path.join(ROOT, 'raster/3rd'),
+'-isystem', os.path.join(ROOT, 'accelerator/3rd'),
 ]
 
 

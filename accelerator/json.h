@@ -147,24 +147,14 @@ std::string stripComments(StringPiece jsonC);
  * Some extension.
  */
 template <class T>
-inline T jto(const dynamic& j) { return j; }
-
-template <> inline int32_t     jto(const dynamic& j) { return j.asInt(); }
-template <> inline uint32_t    jto(const dynamic& j) { return j.asInt(); }
-template <> inline int64_t     jto(const dynamic& j) { return j.asInt(); }
-template <> inline uint64_t    jto(const dynamic& j) { return j.asInt(); }
-template <> inline float       jto(const dynamic& j) { return j.asDouble(); }
-template <> inline double      jto(const dynamic& j) { return j.asDouble(); }
-template <> inline bool        jto(const dynamic& j) { return j.asBool(); }
-template <> inline std::string jto(const dynamic& j) { return j.asString(); }
-
-template <class T>
-inline T get(const dynamic& j, const std::string& key,
+inline T get(const dynamic& j,
+             const std::string& key,
              const T& dflt = T()) {
-  return jto<T>(j.getDefault(key, dflt));
+  return as<T>(j.getDefault(key, dflt));
 }
 
-inline std::string get(const dynamic& j, const std::string& key,
+inline std::string get(const dynamic& j,
+                       const std::string& key,
                        const char* dflt = "") {
   return get<std::string>(j, key, dflt);
 }
@@ -173,7 +163,7 @@ template <class T>
 inline std::vector<T> getArray(const dynamic& j, const std::string& key) {
   std::vector<T> v;
   for (auto& i : j.at(key)) {
-    v.push_back(jto<T>(i));
+    v.push_back(as<T>(i));
   }
   return v;
 }

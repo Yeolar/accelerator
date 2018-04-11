@@ -38,7 +38,7 @@
 #include "accelerator/Range.h"
 
 // V8 JavaScript implementation
-#include "accelerator/3rd/double-conversion/double-conversion.h"
+#include "double-conversion/double-conversion.h"
 
 #define ACC_RANGE_CHECK(condition, message, src)              \
   ((condition) ? (void)0 : throw std::range_error(            \

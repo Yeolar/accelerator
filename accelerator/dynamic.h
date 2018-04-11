@@ -567,6 +567,26 @@ struct dynamic : private boost::operators<dynamic> {
 
 //////////////////////////////////////////////////////////////////////
 
+template <class T>
+typename std::enable_if<
+  std::is_same<T, bool>::value, T>::type
+as(const dynamic& j);
+
+template <class T>
+typename std::enable_if<
+  std::is_integral<T>::value && !std::is_same<T, bool>::value, T>::type
+as(const dynamic& j);
+
+template <class T>
+typename std::enable_if<
+  std::is_floating_point<T>::value, T>::type
+as(const dynamic& j);
+
+template <class T>
+typename std::enable_if<
+  std::is_same<T, std::string>::value, T>::type
+as(const dynamic& j);
+
 } // namespace acc
 
 #include "dynamic-inl.h"

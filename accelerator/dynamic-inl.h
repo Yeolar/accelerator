@@ -779,6 +779,36 @@ inline std::ostream& operator<<(std::ostream& out, dynamic const& d) {
   return out;
 }
 
+//////////////////////////////////////////////////////////////////////
+
+template <class T>
+inline typename std::enable_if<
+  std::is_same<T, bool>::value, T>::type
+as(const dynamic& j) {
+  return j.asBool();
+}
+
+template <class T>
+inline typename std::enable_if<
+  std::is_integral<T>::value && !std::is_same<T, bool>::value, T>::type
+as(const dynamic& j) {
+  return to<T>(j.asInt());
+}
+
+template <class T>
+inline typename std::enable_if<
+  std::is_floating_point<T>::value, T>::type
+as(const dynamic& j) {
+  return to<T>(j.asDouble());
+}
+
+template <class T>
+inline typename std::enable_if<
+  std::is_same<T, std::string>::value, T>::type
+as(const dynamic& j) {
+  return j.asString();
+}
+
 } // namespace acc
 
 #undef ACC_DYNAMIC_APPLY
