@@ -99,6 +99,7 @@ add_subdirectory(accelerator/enc)
 add_subdirectory(accelerator/gen)
 add_subdirectory(accelerator/io)
 add_subdirectory(accelerator/parallel)
+add_subdirectory(accelerator/ssl)
 add_subdirectory(accelerator/thread)
 
 add_library(accelerator_static STATIC
@@ -109,6 +110,7 @@ add_library(accelerator_static STATIC
     $<TARGET_OBJECTS:accelerator_enc>
     $<TARGET_OBJECTS:accelerator_io>
     $<TARGET_OBJECTS:accelerator_parallel>
+    $<TARGET_OBJECTS:accelerator_ssl>
     $<TARGET_OBJECTS:accelerator_thread>
 )
 set_target_properties(accelerator_static PROPERTIES OUTPUT_NAME accelerator)
@@ -120,6 +122,7 @@ add_library(accelerator_shared SHARED
     $<TARGET_OBJECTS:accelerator_enc>
     $<TARGET_OBJECTS:accelerator_io>
     $<TARGET_OBJECTS:accelerator_parallel>
+    $<TARGET_OBJECTS:accelerator_ssl>
     $<TARGET_OBJECTS:accelerator_thread>
 )
 set_target_properties(accelerator_shared PROPERTIES OUTPUT_NAME accelerator)
@@ -142,16 +145,15 @@ install(TARGETS accelerator_shared
 # Test
 if(GTEST_FOUND)
     enable_testing()
+#    add_subdirectory(accelerator/test)
+#    add_subdirectory(accelerator/compression/test)
 #    add_subdirectory(accelerator/concurrency/test)
 #    add_subdirectory(accelerator/enc/test)
 #    add_subdirectory(accelerator/gen/test)
 #    add_subdirectory(accelerator/io/test)
-#    add_subdirectory(accelerator/io/compression/test)
 #    add_subdirectory(accelerator/parallel/test)
-#    add_subdirectory(accelerator/serializer/test)
 #    add_subdirectory(accelerator/ssl/test)
 #    add_subdirectory(accelerator/thread/test)
-#    add_subdirectory(accelerator/util/test)
 endif()
 
 # Pack
