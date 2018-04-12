@@ -2,17 +2,17 @@
  * Copyright (C) 2017, Yeolar
  */
 
-#include "accelerator/io/Compression.h"
-#include "accelerator/util/Hash.h"
-#include "accelerator/util/String.h"
-
 #include <random>
 #include <thread>
 #include <unordered_map>
 #include <boost/noncopyable.hpp>
 #include <gtest/gtest.h>
 
-namespace acc { namespace io { namespace test {
+#include "accelerator/Hash.h"
+#include "accelerator/String.h"
+#include "accelerator/compression/Compression.h"
+
+namespace acc { namespace compression { namespace test {
 
 TEST(CompressionTest, Example) {
   std::string buf = "aaaabbbbccccdddd";

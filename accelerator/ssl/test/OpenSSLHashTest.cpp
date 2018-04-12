@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-#include "raster/ssl/OpenSSLHash.h"
-#include "raster/io/IOBuf.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/io/IOBuf.h"
+#include "accelerator/ssl/OpenSSLHash.h"
 
 using namespace acc;
 

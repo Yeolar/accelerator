@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-#include "accelerator/io/FSUtil.h"
-#include "accelerator/util/Logging.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/Logging.h"
+#include "accelerator/io/FSUtil.h"
 
 using namespace acc;
 

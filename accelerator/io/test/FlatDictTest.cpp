@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-#include "accelerator/io/FlatDict.h"
-#include "FlatDictTest_generated.h"
 #include <gtest/gtest.h>
+
+#include "FlatDictTest_generated.h"
+#include "accelerator/io/FlatDict.h"
 
 using namespace acc;
 

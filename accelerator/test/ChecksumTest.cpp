@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/Checksum.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/Checksum.h"
 
 using namespace acc;
 

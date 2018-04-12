@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-#include "accelerator/io/FlatDict.h"
-#include "FlatDictTest_generated.h"
 #include <unordered_map>
-#include "accelerator/util/Benchmark.h"
-#include "accelerator/util/Range.h"
-#include "accelerator/util/RWLock.h"
+
+#include "FlatDictTest_generated.h"
+#include "accelerator/Benchmark.h"
+#include "accelerator/Range.h"
+#include "accelerator/io/FlatDict.h"
+#include "accelerator/thread/SharedMutex.h"
 
 using namespace acc;
 
@@ -31,7 +32,7 @@ public:
   explicit LockedUnorderedMap(size_t) {}
 
   Block get(Key key) {
-    RLockGuard guard(lock_);
+    SharedMutex::ReadHolder guard(lock_);
     std::unique_ptr<IOBuf> buf;
     auto it = map_.find(key);
     if (it != map_.end()) {
@@ -41,12 +42,12 @@ public:
   }
 
   void erase(Key key) {
-    WLockGuard guard(lock_);
+    SharedMutex::WriteHolder guard(lock_);
     map_.erase(key);
   }
 
   void update(Key key, ByteRange range, uint64_t ts = timestampNow()) {
-    WLockGuard guard(lock_);
+    SharedMutex::WriteHolder guard(lock_);
     std::unique_ptr<IOBuf> buf(
         IOBuf::createCombined(Block::kHeadSize + range.size()));
     io::Appender appender(buf.get(), 0);
@@ -58,7 +59,7 @@ public:
 
 private:
   std::unordered_map<Key, std::unique_ptr<IOBuf>> map_;
-  mutable RWLock lock_;
+  mutable SharedMutex lock_;
 };
 
 template <typename Map>

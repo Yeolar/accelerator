@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/ThreadUtil.h"
 #include <thread>
 #include <gtest/gtest.h>
+
+#include "accelerator/thread/ThreadUtil.h"
 
 using namespace acc;
 

@@ -2,7 +2,7 @@
 
 set(ACCELERATOR_PARALLEL_TEST_SRCS
     DAGTest.cpp
-    GroupTest.cpp
+    #GroupTest.cpp
 )
 
 foreach(test_src ${ACCELERATOR_PARALLEL_TEST_SRCS})

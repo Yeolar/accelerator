@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/Singleton.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/Singleton.h"
 
 using namespace acc;
 

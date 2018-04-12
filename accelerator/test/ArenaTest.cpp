@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/Arena.h"
-#include "accelerator/util/Memory.h"
 #include <unordered_map>
 #include <vector>
 #include <gtest/gtest.h>
+
+#include "accelerator/Arena.h"
+#include "accelerator/Memory.h"
 
 using namespace acc;
 

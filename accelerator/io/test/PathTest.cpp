@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include "accelerator/io/Path.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/io/Path.h"
 
 using namespace acc;
 

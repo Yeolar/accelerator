@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 #include <iosfwd>
 #include <map>
 #include <vector>
+#include <gtest/gtest.h>
 
 #include "accelerator/gen/String.h"
 

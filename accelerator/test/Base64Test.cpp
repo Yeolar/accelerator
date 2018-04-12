@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/Base64.h"
-#include "accelerator/ssl/OpenSSLHash.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/Base64.h"
+#include "accelerator/ssl/OpenSSLHash.h"
 
 using namespace acc;
 

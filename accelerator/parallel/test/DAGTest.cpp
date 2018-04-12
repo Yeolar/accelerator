@@ -15,10 +15,11 @@
  */
 
 #include <string>
-#include "accelerator/parallel/DAG.h"
-#include "accelerator/util/Logging.h"
-#include "accelerator/util/String.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/Logging.h"
+#include "accelerator/String.h"
+#include "accelerator/parallel/DAG.h"
 
 using namespace acc;
 

@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-#include "accelerator/enc/CharProperty.h"
 #include <gtest/gtest.h>
-#include "accelerator/util/Bits.h"
-#include "accelerator/util/Macro.h"
+
+#include "accelerator/Bits.h"
+#include "accelerator/Macro.h"
+#include "accelerator/enc/CharProperty.h"
 
 using namespace acc;
 

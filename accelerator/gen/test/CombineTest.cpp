@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 #include <string>
 #include <vector>
 #include <tuple>
+#include <gtest/gtest.h>
 
-#include "accelerator/util/Range.h"
+#include "accelerator/Range.h"
 #include "accelerator/gen/Base.h"
 #include "accelerator/gen/Combine.h"
 

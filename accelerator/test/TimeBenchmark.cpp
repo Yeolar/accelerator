@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/Time.h"
-
 #include <sys/time.h>
-#include "accelerator/util/Benchmark.h"
+
+#include "accelerator/Benchmark.h"
+#include "accelerator/Time.h"
 
 using namespace acc;
 

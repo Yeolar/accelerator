@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 #include <string>
 #include <vector>
+#include <gtest/gtest.h>
 
+#include "accelerator/Range.h"
+#include "accelerator/TestUtil.h"
 #include "accelerator/gen/Base.h"
 #include "accelerator/gen/File.h"
 #include "accelerator/io/File.h"
-#include "accelerator/util/Range.h"
-#include "accelerator/util/TestUtil.h"
 
 using namespace acc::gen;
 using namespace acc;

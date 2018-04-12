@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/String.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/String.h"
 
 using namespace acc;
 

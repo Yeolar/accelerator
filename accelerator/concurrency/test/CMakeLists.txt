@@ -1,7 +1,7 @@
 # Copyright (C) 2017, Yeolar
 
 set(ACCELERATOR_CONCURRENCY_TEST_SRCS
-    ThreadPoolTest.cpp
+    ThreadPoolExecutorTest.cpp
 )
 
 foreach(test_src ${ACCELERATOR_CONCURRENCY_TEST_SRCS})

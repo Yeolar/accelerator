@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-#include "accelerator/io/IOBuf.h"
-#include "accelerator/io/Cursor.h"
-#include "accelerator/util/Range.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/Range.h"
+#include "accelerator/io/Cursor.h"
+#include "accelerator/io/IOBuf.h"
 
 using acc::ByteRange;
 using acc::IOBuf;

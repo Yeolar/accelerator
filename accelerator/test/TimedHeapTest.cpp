@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/TimedHeap.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/TimedHeap.h"
 
 using namespace acc;
 

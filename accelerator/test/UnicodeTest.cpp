@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/Unicode.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/Unicode.h"
 
 using namespace acc;
 

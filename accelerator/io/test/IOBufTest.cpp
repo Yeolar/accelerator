@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "accelerator/io/IOBuf.h"
-#include "accelerator/io/TypedIOBuf.h"
-#include "accelerator/util/Range.h"
-
 #include <cstddef>
 #include <boost/random.hpp>
 #include <gtest/gtest.h>
+
+#include "accelerator/Range.h"
+#include "accelerator/io/IOBuf.h"
+#include "accelerator/io/TypedIOBuf.h"
 
 using acc::IOBuf;
 using acc::TypedIOBuf;

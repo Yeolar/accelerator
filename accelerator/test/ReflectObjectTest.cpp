@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/ReflectObject.h"
-#include "accelerator/util/Logging.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/ReflectObject.h"
+#include "accelerator/Logging.h"
 
 using namespace acc;
 

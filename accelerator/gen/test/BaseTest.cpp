@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 #include <iosfwd>
 #include <map>
 #include <random>
 #include <set>
 #include <vector>
+#include <gtest/gtest.h>
 
-#include "accelerator/util/MapUtil.h"
-#include "accelerator/util/Memory.h"
+#include "accelerator/MapUtil.h"
+#include "accelerator/Memory.h"
 #include "accelerator/gen/Base.h"
 
 using namespace acc::gen;

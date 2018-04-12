@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/Traits.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/Traits.h"
 
 using namespace acc;
 

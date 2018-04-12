@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/AtomicPtr.h"
-
 #include <atomic>
-#include "accelerator/util/Benchmark.h"
+
+#include "accelerator/Benchmark.h"
+#include "accelerator/thread/AtomicPtr.h"
 
 using namespace acc;
 

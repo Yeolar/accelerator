@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/Hash.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/Hash.h"
 
 using namespace acc::hash;
 

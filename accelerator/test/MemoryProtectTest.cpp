@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/MemoryProtect.h"
-#include "accelerator/framework/Signal.h"
 #include <stdio.h>
 #include <malloc.h>
 #include <stdlib.h>
+
+#include "accelerator/MemoryProtect.h"
+#include "accelerator/framework/Signal.h"
 
 using namespace acc;
 

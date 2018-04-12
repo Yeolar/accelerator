@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include "accelerator/util/FixedStream.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/FixedStream.h"
 
 using namespace acc;
 

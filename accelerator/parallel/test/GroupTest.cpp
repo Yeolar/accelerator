@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include "accelerator/parallel/Group.h"
 #include <gtest/gtest.h>
+
+#include "accelerator/parallel/Group.h"
 
 using namespace acc;
 
