@@ -100,6 +100,7 @@ add_subdirectory(accelerator/gen)
 add_subdirectory(accelerator/io)
 add_subdirectory(accelerator/scheduler)
 add_subdirectory(accelerator/ssl)
+add_subdirectory(accelerator/stats)
 add_subdirectory(accelerator/thread)
 
 add_library(accelerator_static STATIC
@@ -111,6 +112,7 @@ add_library(accelerator_static STATIC
     $<TARGET_OBJECTS:accelerator_io>
     $<TARGET_OBJECTS:accelerator_scheduler>
     $<TARGET_OBJECTS:accelerator_ssl>
+    $<TARGET_OBJECTS:accelerator_stats>
     $<TARGET_OBJECTS:accelerator_thread>
 )
 set_target_properties(accelerator_static PROPERTIES OUTPUT_NAME accelerator)
@@ -123,6 +125,7 @@ add_library(accelerator_shared SHARED
     $<TARGET_OBJECTS:accelerator_io>
     $<TARGET_OBJECTS:accelerator_scheduler>
     $<TARGET_OBJECTS:accelerator_ssl>
+    $<TARGET_OBJECTS:accelerator_stats>
     $<TARGET_OBJECTS:accelerator_thread>
 )
 set_target_properties(accelerator_shared PROPERTIES OUTPUT_NAME accelerator)
