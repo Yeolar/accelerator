@@ -16,7 +16,7 @@
 
 #include <gtest/gtest.h>
 
-#include "accelerator/parallel/Group.h"
+#include "accelerator/scheduler/Group.h"
 
 using namespace acc;
 

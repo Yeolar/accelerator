@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "accelerator/parallel/ParallelScheduler.h"
+#include "accelerator/scheduler/ParallelScheduler.h"
 
 #include "accelerator/ReflectObject.h"
 

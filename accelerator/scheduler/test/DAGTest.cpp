@@ -19,7 +19,7 @@
 
 #include "accelerator/Logging.h"
 #include "accelerator/String.h"
-#include "accelerator/parallel/DAG.h"
+#include "accelerator/scheduler/DAG.h"
 
 using namespace acc;
 

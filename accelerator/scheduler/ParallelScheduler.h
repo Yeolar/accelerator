@@ -19,8 +19,8 @@
 #include <map>
 #include <vector>
 
-#include "accelerator/parallel/DAG.h"
-#include "accelerator/parallel/Graph.h"
+#include "accelerator/scheduler/DAG.h"
+#include "accelerator/scheduler/Graph.h"
 #include "accelerator/thread/Waiter.h"
 
 namespace acc {

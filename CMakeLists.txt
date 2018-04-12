@@ -98,7 +98,7 @@ add_subdirectory(accelerator/concurrency)
 add_subdirectory(accelerator/enc)
 add_subdirectory(accelerator/gen)
 add_subdirectory(accelerator/io)
-add_subdirectory(accelerator/parallel)
+add_subdirectory(accelerator/scheduler)
 add_subdirectory(accelerator/ssl)
 add_subdirectory(accelerator/thread)
 
@@ -109,7 +109,7 @@ add_library(accelerator_static STATIC
     $<TARGET_OBJECTS:accelerator_concurrency>
     $<TARGET_OBJECTS:accelerator_enc>
     $<TARGET_OBJECTS:accelerator_io>
-    $<TARGET_OBJECTS:accelerator_parallel>
+    $<TARGET_OBJECTS:accelerator_scheduler>
     $<TARGET_OBJECTS:accelerator_ssl>
     $<TARGET_OBJECTS:accelerator_thread>
 )
@@ -121,7 +121,7 @@ add_library(accelerator_shared SHARED
     $<TARGET_OBJECTS:accelerator_concurrency>
     $<TARGET_OBJECTS:accelerator_enc>
     $<TARGET_OBJECTS:accelerator_io>
-    $<TARGET_OBJECTS:accelerator_parallel>
+    $<TARGET_OBJECTS:accelerator_scheduler>
     $<TARGET_OBJECTS:accelerator_ssl>
     $<TARGET_OBJECTS:accelerator_thread>
 )
@@ -151,7 +151,7 @@ if(GTEST_FOUND)
     #add_subdirectory(accelerator/enc/test)
     add_subdirectory(accelerator/gen/test)
     add_subdirectory(accelerator/io/test)
-    #add_subdirectory(accelerator/parallel/test)
+    #add_subdirectory(accelerator/scheduler/test)
     add_subdirectory(accelerator/ssl/test)
     add_subdirectory(accelerator/thread/test)
 endif()

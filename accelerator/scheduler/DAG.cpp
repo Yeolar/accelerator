@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "accelerator/parallel/DAG.h"
+#include "accelerator/scheduler/DAG.h"
 
 namespace acc {
 
