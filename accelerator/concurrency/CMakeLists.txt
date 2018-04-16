@@ -2,6 +2,7 @@
 
 set(ACCELERATOR_CONCURRENCY_SRCS
     CPUThreadPoolExecutor.cpp
+    IOThreadPoolExecutor.cpp
     ThreadedExecutor.cpp
     ThreadPoolExecutor.cpp
 )
@@ -10,6 +11,7 @@ add_library(accelerator_concurrency OBJECT ${ACCELERATOR_CONCURRENCY_SRCS})
 install(FILES
     CPUThreadPoolExecutor.h
     Executor.h
+    IOThreadPoolExecutor.h
     ThreadedExecutor.h
     ThreadFactory.h
     ThreadPoolExecutor.h

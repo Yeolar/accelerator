@@ -96,6 +96,7 @@ add_subdirectory(accelerator)
 add_subdirectory(accelerator/compression)
 add_subdirectory(accelerator/concurrency)
 add_subdirectory(accelerator/enc)
+add_subdirectory(accelerator/event)
 add_subdirectory(accelerator/gen)
 add_subdirectory(accelerator/io)
 add_subdirectory(accelerator/scheduler)
@@ -109,6 +110,7 @@ add_library(accelerator_static STATIC
     $<TARGET_OBJECTS:accelerator_compression>
     $<TARGET_OBJECTS:accelerator_concurrency>
     $<TARGET_OBJECTS:accelerator_enc>
+    $<TARGET_OBJECTS:accelerator_event>
     $<TARGET_OBJECTS:accelerator_io>
     $<TARGET_OBJECTS:accelerator_scheduler>
     $<TARGET_OBJECTS:accelerator_ssl>
@@ -122,6 +124,7 @@ add_library(accelerator_shared SHARED
     $<TARGET_OBJECTS:accelerator_compression>
     $<TARGET_OBJECTS:accelerator_concurrency>
     $<TARGET_OBJECTS:accelerator_enc>
+    $<TARGET_OBJECTS:accelerator_event>
     $<TARGET_OBJECTS:accelerator_io>
     $<TARGET_OBJECTS:accelerator_scheduler>
     $<TARGET_OBJECTS:accelerator_ssl>
