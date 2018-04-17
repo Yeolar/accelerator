@@ -52,14 +52,14 @@ class EventLoop {
   void addCallback(VoidFunc&& callback);
 
   void pushEvent(EventBase* event);
+  void popEvent(EventBase* event);
+  void updateEvent(EventBase* event, uint32_t events);
   void dispatchEvent(EventBase* event);
 
  private:
   void loopBody(bool once = false);
 
-  void updateEvent(EventBase* event, uint32_t events);
   void restartEvent(EventBase* event);
-  void popEvent(EventBase* event);
 
   void checkTimeoutEvents();
 
