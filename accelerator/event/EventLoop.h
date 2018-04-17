@@ -51,14 +51,14 @@ class EventLoop {
   void addEvent(EventBase* event);
   void addCallback(VoidFunc&& callback);
 
+  void pushEvent(EventBase* event);
+  void dispatchEvent(EventBase* event);
+
  private:
   void loopBody(bool once = false);
 
-  void dispatchEvent(EventBase* event);
   void updateEvent(EventBase* event, uint32_t events);
   void restartEvent(EventBase* event);
-
-  void pushEvent(EventBase* event);
   void popEvent(EventBase* event);
 
   void checkTimeoutEvents();
