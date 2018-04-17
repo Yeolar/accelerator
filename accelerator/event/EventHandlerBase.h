@@ -17,7 +17,6 @@
 #pragma once
 
 #include "accelerator/event/EventBase.h"
-#include "accelerator/event/EventLoop.h"
 
 namespace acc {
 

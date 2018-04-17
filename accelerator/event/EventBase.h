@@ -88,6 +88,9 @@ class EventBase {
    * Event timeout
    */
 
+  const TimeoutOption& timeoutOption() const {
+    return timeoutOpt_;
+  }
   Timeout<EventBase> edeadline() {
     return Timeout<EventBase>(this, starttime() + FLAGS_event_lp_timeout, true);
   }
@@ -125,5 +128,7 @@ inline std::ostream& operator<<(std::ostream& os, const EventBase& event) {
   os << event.str();
   return os;
 }
+
+#undef ACC_EVENT_ENUM
 
 } // namespace acc
