@@ -38,6 +38,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O3 -std=c++11 -fPIC -msse4.2 -mpclmu
 # Link libraries
 link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
+    ${CMAKE_DL_LIBS}
     ${Boost_LIBRARIES}
     ${CURL_LIBRARIES}
     ${GFLAGS_LIBRARIES}
@@ -46,7 +47,6 @@ link_libraries(
     ${OPENSSL_LIBRARIES}
     ${PROTOBUF_LIBRARIES}
     ${ZLIB_LIBRARIES}
-    dl
 )
 
 include_directories(
@@ -169,7 +169,7 @@ set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
 set(CPACK_GENERATOR "DEB")
 set(CPACK_SOURCE_GENERATOR "TGZ")
-set(CPACK_PACKAGE_DESCRIPTION "accelerator: rddoc framework")
+set(CPACK_PACKAGE_DESCRIPTION "accelerator: foundation framework of rddoc.")
 set(CPACK_PACKAGE_CONTACT "rdd@rddoc.com")
 include(CPack)
 
