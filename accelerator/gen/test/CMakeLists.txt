@@ -1,4 +1,4 @@
-# Copyright (C) 2017, Yeolar
+# Copyright 2017 Yeolar
 
 set(ACCELERATOR_GEN_TEST_SRCS
     BaseTest.cpp
