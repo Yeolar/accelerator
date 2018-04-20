@@ -17,6 +17,7 @@
 #include <sys/time.h>
 
 #include "accelerator/Benchmark.h"
+#include "accelerator/Portability.h"
 #include "accelerator/Time.h"
 
 using namespace acc;
@@ -86,7 +87,7 @@ BENCHMARK(time, n) {
 }
 
 int main(int argc, char** argv) {
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   acc::runBenchmarks();
   return 0;
 }

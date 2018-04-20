@@ -18,6 +18,7 @@
 
 #include "FlatDictTest_generated.h"
 #include "accelerator/Benchmark.h"
+#include "accelerator/Portability.h"
 #include "accelerator/Range.h"
 #include "accelerator/io/FlatDict.h"
 #include "accelerator/thread/SharedMutex.h"
@@ -221,7 +222,7 @@ BENCHMARK(flatdict_sync) {
 }
 
 int main(int argc, char ** argv) {
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   acc::runBenchmarks();
   return 0;
 }

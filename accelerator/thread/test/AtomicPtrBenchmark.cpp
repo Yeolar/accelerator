@@ -17,6 +17,7 @@
 #include <atomic>
 
 #include "accelerator/Benchmark.h"
+#include "accelerator/Portability.h"
 #include "accelerator/thread/AtomicPtr.h"
 
 using namespace acc;
@@ -88,7 +89,7 @@ BENCHMARK_RELATIVE(memory_barrier_atomic_pointer, n) {
 }
 
 int main(int argc, char** argv) {
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   acc::runBenchmarks();
   return 0;
 }
