@@ -56,6 +56,7 @@ install(FILES
     Memory.h
     MemoryMapping.h
     MemoryProtect.h
+    MoveWrapper.h
     noncopyable.h
     Optional.h
     ProcessUtil.h

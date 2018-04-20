@@ -23,6 +23,7 @@
 
 #include "accelerator/Conv.h"
 #include "accelerator/Function.h"
+#include "accelerator/MoveWrapper.h"
 #include "accelerator/thread/ThreadUtil.h"
 
 namespace acc {
@@ -34,10 +35,11 @@ class ThreadFactory {
 
   std::thread newThread(VoidFunc&& func) {
     auto name = to<std::string>(prefix_, suffix_++);
+    auto fnw = makeMoveWrapper(std::move(func));
     return std::thread(
-        [&] () {
+        [name, fnw] () {
           setCurrentThreadName(name);
-          func();
+          (*fnw)();
         });
   }
 
