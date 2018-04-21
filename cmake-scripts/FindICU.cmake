@@ -9,6 +9,11 @@
 #  ICU_I18N_LIBRARIES - Libraries to link against for ICU internationaliation
 #                       (note: in addition to ICU_LIBRARIES)
 
+IF (ICU_INCLUDE_DIR)
+  # Already in cache, be silent
+  SET(ICU_FIND_QUIETLY TRUE)
+ENDIF ()
+
 # Look for the header file.
 find_path(
   ICU_INCLUDE_DIR

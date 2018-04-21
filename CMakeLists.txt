@@ -20,11 +20,10 @@ set(VERSION_PATCH 0)
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package(Threads REQUIRED)
 find_package(Boost REQUIRED COMPONENTS context regex)
-find_package(CURL REQUIRED)
+find_package(DoubleConversion REQUIRED)
 find_package(GFlags REQUIRED)
 find_package(ICU REQUIRED)
 find_package(OpenSSL REQUIRED)
-find_package(Protobuf REQUIRED)
 find_package(ZLIB REQUIRED)
 
 # Optional packages
@@ -40,17 +39,15 @@ link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
     ${Boost_LIBRARIES}
-    ${CURL_LIBRARIES}
+    ${DOUBLE_CONVERSION_LIBRARY}
     ${GFLAGS_LIBRARIES}
     ${ICU_LIBRARIES}
     ${ICU_I18N_LIBRARIES}
     ${OPENSSL_LIBRARIES}
-    ${PROTOBUF_LIBRARIES}
     ${ZLIB_LIBRARIES}
 )
 
 include_directories(
-    ${PROJECT_SOURCE_DIR}/accelerator/3rd
     ${PROJECT_SOURCE_DIR}
 )
 
@@ -90,8 +87,6 @@ configure_file(
 )
 
 # Work on all sub directories
-add_subdirectory(accelerator/3rd/double-conversion)
-
 add_subdirectory(accelerator)
 add_subdirectory(accelerator/compression)
 add_subdirectory(accelerator/concurrency)
@@ -105,7 +100,6 @@ add_subdirectory(accelerator/stats)
 add_subdirectory(accelerator/thread)
 
 add_library(accelerator_static STATIC
-    $<TARGET_OBJECTS:double-conversion>
     $<TARGET_OBJECTS:accelerator_base>
     $<TARGET_OBJECTS:accelerator_compression>
     $<TARGET_OBJECTS:accelerator_concurrency>
@@ -119,7 +113,6 @@ add_library(accelerator_static STATIC
 )
 set_target_properties(accelerator_static PROPERTIES OUTPUT_NAME accelerator)
 add_library(accelerator_shared SHARED
-    $<TARGET_OBJECTS:double-conversion>
     $<TARGET_OBJECTS:accelerator_base>
     $<TARGET_OBJECTS:accelerator_compression>
     $<TARGET_OBJECTS:accelerator_concurrency>

@@ -34,11 +34,11 @@
 #include <type_traits>
 #include <boost/implicit_cast.hpp>
 
+// V8 JavaScript implementation
+#include <double-conversion/double-conversion.h>
+
 #include "accelerator/Macro.h"
 #include "accelerator/Range.h"
-
-// V8 JavaScript implementation
-#include "double-conversion/double-conversion.h"
 
 #define ACC_RANGE_CHECK(condition, message, src)              \
   ((condition) ? (void)0 : throw std::range_error(            \
