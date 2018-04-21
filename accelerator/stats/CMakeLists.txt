@@ -5,6 +5,4 @@ set(ACCELERATOR_STATS_SRCS
 )
 add_library(accelerator_stats OBJECT ${ACCELERATOR_STATS_SRCS})
 
-install(FILES
-    Monitor.h
-    DESTINATION include/accelerator/stats)
+install(FILES *.h DESTINATION include/accelerator/stats)

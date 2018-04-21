@@ -7,8 +7,4 @@ set(ACCELERATOR_COMPRESSION_SRCS
 )
 add_library(accelerator_compression OBJECT ${ACCELERATOR_COMPRESSION_SRCS})
 
-install(FILES
-    Compression.h
-    ZlibStreamCompressor.h
-    ZlibStreamDecompressor.h
-    DESTINATION include/accelerator/compression)
+install(FILES *.h DESTINATION include/accelerator/compression)

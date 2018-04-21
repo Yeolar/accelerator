@@ -8,11 +8,4 @@ set(ACCELERATOR_CONCURRENCY_SRCS
 )
 add_library(accelerator_concurrency OBJECT ${ACCELERATOR_CONCURRENCY_SRCS})
 
-install(FILES
-    CPUThreadPoolExecutor.h
-    Executor.h
-    IOThreadPoolExecutor.h
-    ThreadedExecutor.h
-    ThreadFactory.h
-    ThreadPoolExecutor.h
-    DESTINATION include/accelerator/concurrency)
+install(FILES *.h DESTINATION include/accelerator/concurrency)

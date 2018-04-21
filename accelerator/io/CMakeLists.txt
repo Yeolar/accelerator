@@ -14,17 +14,4 @@ set(ACCELERATOR_IO_SRCS
 )
 add_library(accelerator_io OBJECT ${ACCELERATOR_IO_SRCS})
 
-install(FILES
-    Cursor.h
-    Cursor-inl.h
-    File.h
-    FileUtil.h
-    FSUtil.h
-    HugePages.h
-    IOBuf.h
-    IOBufQueue.h
-    Path.h
-    RecordIO.h
-    TypedIOBuf.h
-    Waker.h
-    DESTINATION include/accelerator/io)
+install(FILES *.h DESTINATION include/accelerator/io)

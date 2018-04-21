@@ -9,11 +9,4 @@ set(ACCELERATOR_EVENT_SRCS
 )
 add_library(accelerator_event OBJECT ${ACCELERATOR_EVENT_SRCS})
 
-install(FILES
-    EPoll.h
-    EventBase.h
-    EventHandlerBase.h
-    EventLoop.h
-    EventLoopManager.h
-    EventUtil.h
-    DESTINATION include/accelerator/event)
+install(FILES *.h DESTINATION include/accelerator/event)
