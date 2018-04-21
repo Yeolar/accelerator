@@ -8,7 +8,6 @@ set(ACCELERATOR_IO_SRCS
     HugePages.cpp
     IOBuf.cpp
     IOBufQueue.cpp
-    MMapIOAlloc.cpp
     Path.cpp
     RecordIO.cpp
     Waker.cpp
@@ -20,13 +19,10 @@ install(FILES
     Cursor-inl.h
     File.h
     FileUtil.h
-    FlatDict.h
     FSUtil.h
     HugePages.h
     IOBuf.h
     IOBufQueue.h
-    MMapFlatDict.h
-    MMapIOAlloc.h
     Path.h
     RecordIO.h
     TypedIOBuf.h

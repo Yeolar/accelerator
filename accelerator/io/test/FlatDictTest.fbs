@@ -1,9 +1,0 @@
-// Copyright 2017 Yeolar
-
-namespace acc.fbs;
-
-table Person {
-    name: string;
-    city: string;
-}
-

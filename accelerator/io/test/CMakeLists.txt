@@ -2,7 +2,6 @@
 
 set(ACCELERATOR_IO_TEST_SRCS
     FileTest.cpp
-    FlatDictTest.cpp
     FSUtilTest.cpp
     IOBufCursorTest.cpp
     IOBufTest.cpp
@@ -16,15 +15,3 @@ foreach(test_src ${ACCELERATOR_IO_TEST_SRCS})
     target_link_libraries(${test} ${GTEST_BOTH_LIBRARIES} accelerator_static)
     add_test(${test} ${test} CONFIGURATIONS Debug)
 endforeach()
-
-set(ACCELERATOR_IO_BENCHMARK_SRCS
-    FlatDictBenchmark.cpp
-)
-
-foreach(bench_src ${ACCELERATOR_IO_BENCHMARK_SRCS})
-    get_filename_component(bench_name ${bench_src} NAME_WE)
-    set(bench accelerator_io_${bench_name})
-    add_executable(${bench} ${bench_src})
-    target_link_libraries(${bench} accelerator_static)
-endforeach()
-
