@@ -1,0 +1,52 @@
+language: cpp
+
+os:
+  - linux
+
+compiler:
+  - gcc
+
+env:
+  global:
+    - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+  matrix:
+    - BUILD_TYPE=Debug
+    - BUILD_TYPE=Release
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.9
+      - cmake
+      - libboost-all-dev
+      - libgflags-dev
+      - libgtest-dev
+      - libicu-dev
+      - libprotobuf-dev
+      - zlib1g-dev
+      - openssl
+      - protobuf-compiler
+
+before_install:
+  - sudo wget https://github.com/google/googletest/archive/release-1.7.0.tar.gz
+  - sudo tar xf release-1.7.0.tar.gz
+  - cd googletest-release-1.7.0
+  - sudo cmake .
+  - sudo make -j4
+  - sudo cp -a include/gtest /usr/include
+  - sudo cp -a libgtest_main.a libgtest.a /usr/lib/
+  - cd ..
+  - eval "${MATRIX_EVAL}"
+
+script:
+  - cd examples
+  - sh gen.sh
+  - cd ..
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+  - make -j4
+  - make test
+
