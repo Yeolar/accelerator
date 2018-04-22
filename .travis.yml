@@ -25,10 +25,8 @@ addons:
       - libgflags-dev
       - libgtest-dev
       - libicu-dev
-      - libprotobuf-dev
       - zlib1g-dev
       - openssl
-      - protobuf-compiler
 
 before_install:
   - sudo wget https://github.com/google/googletest/archive/release-1.7.0.tar.gz
