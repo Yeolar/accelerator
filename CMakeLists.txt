@@ -7,7 +7,7 @@
 # Define project
 project(accelerator)
 
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 3.2)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake-scripts")
 
@@ -20,7 +20,6 @@ set(VERSION_PATCH 0)
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package(Threads REQUIRED)
 find_package(Boost REQUIRED COMPONENTS context regex)
-find_package(DoubleConversion REQUIRED)
 find_package(GFlags REQUIRED)
 find_package(ICU REQUIRED)
 find_package(OpenSSL REQUIRED)
@@ -31,15 +30,18 @@ find_package(GTest)
 
 # Setup environment
 set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2 -mpclmul")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")    # memcheck
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O3 -std=c++11 -fPIC -msse4.2 -mpclmul")   # memcheck: -fsanitize=address
 
 # Link libraries
 link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
     ${Boost_LIBRARIES}
-    ${DOUBLE_CONVERSION_LIBRARY}
     ${GFLAGS_LIBRARIES}
     ${ICU_LIBRARIES}
     ${ICU_I18N_LIBRARIES}
@@ -90,6 +92,7 @@ configure_file(
 add_subdirectory(accelerator)
 add_subdirectory(accelerator/compression)
 add_subdirectory(accelerator/concurrency)
+add_subdirectory(accelerator/double-conversion)
 add_subdirectory(accelerator/enc)
 add_subdirectory(accelerator/event)
 add_subdirectory(accelerator/gen)
@@ -100,6 +103,7 @@ add_subdirectory(accelerator/stats)
 add_subdirectory(accelerator/thread)
 
 add_library(accelerator_static STATIC
+    $<TARGET_OBJECTS:double-conversion>
     $<TARGET_OBJECTS:accelerator_base>
     $<TARGET_OBJECTS:accelerator_compression>
     $<TARGET_OBJECTS:accelerator_concurrency>
@@ -112,7 +116,9 @@ add_library(accelerator_static STATIC
     $<TARGET_OBJECTS:accelerator_thread>
 )
 set_target_properties(accelerator_static PROPERTIES OUTPUT_NAME accelerator)
+
 add_library(accelerator_shared SHARED
+    $<TARGET_OBJECTS:double-conversion>
     $<TARGET_OBJECTS:accelerator_base>
     $<TARGET_OBJECTS:accelerator_compression>
     $<TARGET_OBJECTS:accelerator_concurrency>

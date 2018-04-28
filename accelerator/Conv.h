@@ -35,7 +35,7 @@
 #include <boost/implicit_cast.hpp>
 
 // V8 JavaScript implementation
-#include <double-conversion/double-conversion.h>
+#include "accelerator/double-conversion/double-conversion.h"
 
 #include "accelerator/Macro.h"
 #include "accelerator/Range.h"
