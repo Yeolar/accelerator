@@ -54,7 +54,6 @@ flags = [
 '/usr/local/include',
 
 '-isystem', ROOT,
-'-isystem', os.path.join(ROOT, 'accelerator/3rd'),
 ]
 
 
