@@ -20,7 +20,7 @@ namespace acc {
 
 DAG::Key DAG::add(VoidFunc&& func) {
   Key i = nodes_.size();
-  nodes_.emplace_back(std::move(func), [&]() { schedule(i); });
+  nodes_.emplace_back(std::move(func), [&, i]() { schedule(i); });
   return i;
 }
 
@@ -34,7 +34,7 @@ void DAG::dependency(Key a, Key b) {
 void DAG::schedule(Key i) {
   for (auto key : nodes_[i].nexts) {
     if (--nodes_[key].waitCount == 0) {
-      executor_->add([&]() {
+      executor_->add([&, key]() {
         nodes_[key].func();
         nodes_[key].schedule();
       });

@@ -19,6 +19,7 @@
 #include <map>
 #include <vector>
 
+#include "accelerator/concurrency/ThreadPoolExecutor.h"
 #include "accelerator/scheduler/DAG.h"
 #include "accelerator/scheduler/Graph.h"
 #include "accelerator/thread/Waiter.h"

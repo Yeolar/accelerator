@@ -206,7 +206,7 @@ bool CharProperty::compile(const std::string& cfile,
     out.append(kMaxCategoryLength - c.size(), '\0');
   }
   out.append((char*)&table[0], sizeof(CharInfo) * table.size());
-  if (!writeFile(out, ofile.c_str(), 0644)) {
+  if (!writeFile(out, ofile.c_str())) {
     ACCLOG(ERROR) << "write char property file " << ofile << " failed";
     return false;
   }

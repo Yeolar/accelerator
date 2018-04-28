@@ -17,10 +17,11 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 
-#include "accelerator/concurrency/ThreadPoolExecutor.h"
+#include "accelerator/concurrency/Executor.h"
 
 namespace acc {
 
@@ -28,7 +29,7 @@ class DAG {
  public:
   typedef size_t Key;
 
-  DAG(std::shared_ptr<ThreadPoolExecutor> executor)
+  DAG(std::shared_ptr<Executor> executor)
     : executor_(executor) {}
 
   Key add(VoidFunc&& func);
@@ -72,7 +73,7 @@ class DAG {
   void schedule(Key i);
 
   std::vector<Node> nodes_;
-  std::shared_ptr<ThreadPoolExecutor> executor_;
+  std::shared_ptr<Executor> executor_;
 };
 
 } // namespace acc

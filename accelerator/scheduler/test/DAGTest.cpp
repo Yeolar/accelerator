@@ -17,34 +17,33 @@
 #include <string>
 #include <gtest/gtest.h>
 
-#include "accelerator/Logging.h"
 #include "accelerator/String.h"
 #include "accelerator/scheduler/DAG.h"
 
 using namespace acc;
 
-class IntExecutor : public Executor {
-public:
-  IntExecutor(int i, std::string* out) : key_(i), out_(out) {}
+class InlineExecutor : public Executor {
+ public:
+  InlineExecutor() {}
 
-  void run() {
-    stringAppendf(out_, "%d ", key_);
+  void add(VoidFunc func) override {
+    func();
   }
-
-private:
-  int key_;
-  std::string* out_;
 };
 
+void run(int key, std::string* out) {
+  stringAppendf(out, "%d ", key);
+}
+
 TEST(DAG, all) {
-  DAG dag;
+  DAG dag(std::shared_ptr<Executor>(new InlineExecutor()));
   std::string out;
 
-  dag.add(std::make_shared<IntExecutor>(0, &out));
-  dag.add(std::make_shared<IntExecutor>(1, &out));
-  dag.add(std::make_shared<IntExecutor>(2, &out));
-  dag.add(std::make_shared<IntExecutor>(3, &out));
-  dag.add(std::make_shared<IntExecutor>(4, &out));
+  dag.add(std::bind(run, 0, &out));
+  dag.add(std::bind(run, 1, &out));
+  dag.add(std::bind(run, 2, &out));
+  dag.add(std::bind(run, 3, &out));
+  dag.add(std::bind(run, 4, &out));
   /*       2 -+
    * 0 -+      \
    *     \      \
@@ -55,6 +54,6 @@ TEST(DAG, all) {
   dag.dependency(2, 4);
   dag.dependency(3, 4);
 
-  dag.schedule(dag.go(std::make_shared<IntExecutor>(5, &out)));
+  dag.go(std::bind(run, 5, &out));
   EXPECT_STREQ("0 1 3 2 4 5 ", out.c_str());
 }

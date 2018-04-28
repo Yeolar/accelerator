@@ -2,7 +2,6 @@
 
 set(ACCELERATOR_SCHEDULER_TEST_SRCS
     DAGTest.cpp
-    #GroupTest.cpp
 )
 
 foreach(test_src ${ACCELERATOR_SCHEDULER_TEST_SRCS})

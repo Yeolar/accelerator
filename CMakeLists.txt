@@ -13,7 +13,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake-scripts")
 
 # Set project version
 set(VERSION_MAJOR 1)
-set(VERSION_MINOR 0)
+set(VERSION_MINOR 1)
 set(VERSION_PATCH 0)
 
 # Required packages
@@ -153,10 +153,10 @@ if(GTEST_FOUND)
     add_subdirectory(accelerator/test)
     add_subdirectory(accelerator/compression/test)
     add_subdirectory(accelerator/concurrency/test)
-    #add_subdirectory(accelerator/enc/test)
+    add_subdirectory(accelerator/enc/test)
     add_subdirectory(accelerator/gen/test)
     add_subdirectory(accelerator/io/test)
-    #add_subdirectory(accelerator/scheduler/test)
+    add_subdirectory(accelerator/scheduler/test)
     add_subdirectory(accelerator/ssl/test)
     add_subdirectory(accelerator/thread/test)
 endif()
