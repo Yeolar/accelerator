@@ -9,7 +9,7 @@ foreach(test_src ${ACCELERATOR_ENC_TEST_SRCS})
     set(test accelerator_enc_${test_name})
     add_executable(${test} ${test_src})
     target_link_libraries(${test} ${GTEST_BOTH_LIBRARIES} accelerator_static)
-    add_test(${test} ${test} CONFIGURATIONS Debug)
+    add_test(${test} ${test} CONFIGURATIONS ${CMAKE_BUILD_TYPE})
 endforeach()
 
 execute_process(
