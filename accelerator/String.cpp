@@ -198,7 +198,7 @@ void stringVPrintf(std::string* output, const char* format, va_list ap) {
   stringAppendfImpl(*output, format, ap);
 };
 
-std::string errnoStr(int err) {
+fbstring errnoStr(int err) {
   int savedErrno = errno;
 
   // Ensure that we reset errno upon exit.
@@ -207,7 +207,7 @@ std::string errnoStr(int err) {
   char buf[1024];
   buf[0] = '\0';
 
-  std::string result;
+  fbstring result;
 
   // https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man3/strerror_r.3.html
   // http://www.kernel.org/doc/man-pages/online/pages/man3/strerror.3.html
@@ -218,7 +218,7 @@ std::string errnoStr(int err) {
 
   // OSX/FreeBSD use EINVAL and Linux uses -1 so just check for non-zero
   if (r != 0) {
-    result = to<std::string>(
+    result = to<fbstring>(
       "Unknown error ", err, " (strerror_r failed with error ", errno, ")");
   } else {
     result.assign(buf);

@@ -22,7 +22,7 @@
 
 namespace acc {
 
-std::string demangle(const char* name) {
+fbstring demangle(const char* name) {
   int status;
   size_t len = 0;
   // malloc() memory for the demangled type name
@@ -30,7 +30,9 @@ std::string demangle(const char* name) {
   if (status != 0) {
     return name;
   }
-  return std::string(demangled, strlen(demangled));
+  // len is the length of the buffer (including NUL terminator and maybe
+  // other junk)
+  return fbstring(demangled, strlen(demangled), len, AcquireMallocatedString());
 }
 
 } // namespace acc

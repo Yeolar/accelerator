@@ -16,15 +16,26 @@
 
 #pragma once
 
+#include <vector>
 #include <execinfo.h>
 #include <unistd.h>
 
+#include "accelerator/FBString.h"
+
 namespace acc {
 
-inline void recordBacktrace() {
+inline std::vector<fbstring> recordBacktrace() {
+  std::vector<fbstring> out;
   void* array[128];
-  size_t size = backtrace(array, 128);
-  backtrace_symbols_fd(array, size, STDERR_FILENO);
+  int n = backtrace(array, 128);
+  char** lines = backtrace_symbols(array, n);
+  if (lines != nullptr && n > 0) {
+    for (int i = 1; i < n; i++) {
+      out.emplace_back(lines[i]);
+    }
+  }
+  free(lines);
+  return out;
 }
 
 } // namespace acc

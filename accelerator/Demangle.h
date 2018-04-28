@@ -17,14 +17,15 @@
 
 #pragma once
 
-#include <string>
 #include <typeinfo>
+
+#include "accelerator/FBString.h"
 
 namespace acc {
 
-std::string demangle(const char* name);
+fbstring demangle(const char* name);
 
-inline std::string demangle(const std::type_info& type) {
+inline fbstring demangle(const std::type_info& type) {
   return demangle(type.name());
 }
 

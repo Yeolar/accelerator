@@ -105,7 +105,7 @@ class TypeDescriptor {
       ret += "/";
       ret += demangle(tag_ti_.name());
     }
-    return ret;
+    return ret.toStdString();
   }
 
  private:

@@ -24,12 +24,30 @@
 
 #include "accelerator/Conv.h"
 #include "accelerator/Demangle.h"
+#include "accelerator/FBString.h"
 #include "accelerator/Range.h"
 
 #define ACC_PRINTF_FORMAT_ATTR(format_param, dots_param) \
   __attribute__((__format__(__printf__, format_param, dots_param)))
 
 namespace acc {
+
+inline
+std::string toStdString(const fbstring& s) {
+  return std::string(s.data(), s.size());
+}
+
+inline
+const std::string& toStdString(const std::string& s) {
+  return s;
+}
+
+// If called with a temporary, the compiler will select this overload instead
+// of the above, so we don't return a (lvalue) reference to a temporary.
+inline
+std::string&& toStdString(std::string&& s) {
+  return std::move(s);
+}
 
 /**
  * URI-escape a string.  Appends the result to the output string.
@@ -127,22 +145,20 @@ bool unhexlify(const InputString& input, std::string& output);
  * Takes care not to overwrite the actual system errno, so calling
  * errnoStr(errno) is valid.
  */
-std::string errnoStr(int err);
+fbstring errnoStr(int err);
 
 /**
  * Debug string for an exception: include type and what(), if
  * defined.
  */
-inline std::string exceptionStr(const std::exception& e) {
-  return to<std::string>(demangle(typeid(e)), ": ", e.what());
+inline fbstring exceptionStr(const std::exception& e) {
+  return to<fbstring>(demangle(typeid(e)), ": ", e.what());
 }
 
 template<typename E>
-auto exceptionStr(const E& e)
-  -> typename std::enable_if<!std::is_base_of<std::exception, E>::value,
-                             std::string>::type
-{
-  return to<std::string>(demangle(typeid(e)));
+auto exceptionStr(const E& e) -> typename std::
+    enable_if<!std::is_base_of<std::exception, E>::value, fbstring>::type {
+  return demangle(typeid(e));
 }
 
 /**

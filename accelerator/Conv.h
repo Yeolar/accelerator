@@ -37,6 +37,7 @@
 // V8 JavaScript implementation
 #include "accelerator/double-conversion/double-conversion.h"
 
+#include "accelerator/FBString.h"
 #include "accelerator/Macro.h"
 #include "accelerator/Range.h"
 
@@ -342,6 +343,17 @@ template <class Tgt>
 typename std::enable_if<
    IsSomeString<Tgt>::value>::type
 toAppend(StringPiece value, Tgt * result) {
+  result->append(value.data(), value.size());
+}
+
+/**
+ * There's no implicit conversion from fbstring to other string types,
+ * so make a specialization.
+ */
+template <class Tgt>
+typename std::enable_if<
+   IsSomeString<Tgt>::value>::type
+toAppend(const fbstring& value, Tgt * result) {
   result->append(value.data(), value.size());
 }
 
