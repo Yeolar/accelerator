@@ -44,16 +44,12 @@ flags = [
 # For a C project, you would set this to 'c' instead of 'c++'.
 '-x',
 'c++',
-'-isystem',
-'/usr/include',
-'-isystem',
-'/usr/include/c++/4.9.2',
-'-isystem',
-'/usr/lib/gcc/x86_64-linux-gnu/4.9/include',
-'-isystem',
-'/usr/local/include',
 
 '-isystem', ROOT,
+'-isystem', '/usr/local/include',
+'-isystem', '/usr/include',
+'-isystem', '/usr/include/c++/4.9.2',
+'-isystem', '/usr/lib/gcc/x86_64-linux-gnu/4.9/include',
 ]
 
 
