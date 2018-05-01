@@ -16,6 +16,7 @@
 
 #include <gtest/gtest.h>
 
+#include "accelerator/ArrayUtil.h"
 #include "accelerator/Bits.h"
 #include "accelerator/Macro.h"
 #include "accelerator/enc/CharProperty.h"
@@ -30,14 +31,14 @@ TEST(CharProperty, ucs2) {
   uint16_t hanzi_time[] = {
     0x5E74,0x6708,0x65E5,0x53F7,0x65F6,0x5206,0x79D2
   };
-  for (size_t i = 0; i < NELEMS(hanzi_time); ++i) {
+  for (size_t i = 0; i < size(hanzi_time); ++i) {
     EXPECT_TRUE(char_prop.isHanziTime(hanzi_time[i]));
   }
   uint16_t hanzi_digit[] = {
     0x3007,0x4E00,0x4E8C,0x4E09,0x56DB,0x4E94,0x516D,0x4E03,
     0x516B,0x4E5D,0x5341,0x767E,0x5343,0x4E07,0x4EBF
   };
-  for (size_t i = 0; i < NELEMS(hanzi_digit); ++i) {
+  for (size_t i = 0; i < size(hanzi_digit); ++i) {
     EXPECT_TRUE(char_prop.isHanziDigit(hanzi_digit[i]));
   }
   uint16_t stop_punc[] = {
@@ -45,7 +46,7 @@ TEST(CharProperty, ucs2) {
     0x005F,0x3002,0x2026,0xFF01,0xFF0C,0xFF0E,0xFF1A,0xFF1B,
     0xFF1F,0xFF3F
   };
-  for (size_t i = 0; i < NELEMS(stop_punc); ++i) {
+  for (size_t i = 0; i < size(stop_punc); ++i) {
     EXPECT_TRUE(char_prop.isStopPunc(stop_punc[i]));
   }
 }

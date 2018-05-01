@@ -29,13 +29,6 @@
 #define ACC_CONCATENATE(s1, s2) ACC_CONCATENATE_IMPL(s1, s2)
 
 /**
- * Array size.
- */
-#ifndef NELEMS
-#define NELEMS(v) (sizeof(v) / sizeof((v)[0]))
-#endif
-
-/**
  * Likely.
  */
 #undef LIKELY
