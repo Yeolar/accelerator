@@ -36,7 +36,7 @@ Path currentPath() {
 
   while (true) {
     char buf[n];
-    char* p = ::getcwd(buf, NELEMS(buf));
+    char* p = ::getcwd(buf, n);
     if (p) {
       return Path(p);
     } else if (errno == ERANGE) {
@@ -63,7 +63,7 @@ Path canonical(const Path& path, const Path& base) {
 
   while (true) {
     char buf[n];
-    ssize_t r = ::readlink(p.c_str(), buf, NELEMS(buf));
+    ssize_t r = ::readlink(p.c_str(), buf, n);
     checkUnixError(r, "readlink(", p, ") failed");
     if (r < n) {
       return parent / StringPiece(buf, r);

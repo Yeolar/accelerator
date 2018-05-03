@@ -20,6 +20,7 @@
 #include <cerrno>
 #include <system_error>
 
+#include "accelerator/Backtrace.h"
 #include "accelerator/Conv.h"
 
 namespace acc {
@@ -32,7 +33,7 @@ inline void throwSystemErrorExplicit(int err, const char* msg) {
 template <class... Args>
 void throwSystemErrorExplicit(int err, Args&&... args) {
   throwSystemErrorExplicit(
-    err, to<std::string>(std::forward<Args>(args)...).c_str());
+    err, to<fbstring>(std::forward<Args>(args)...).c_str());
 }
 
 template <class... Args>
@@ -72,7 +73,48 @@ void throwOnFail(V&& value, Args&&... args) {
  * If cond is not true, raise an exception of type E.  E must have a ctor that
  * works with const char* (a description of the failure).
  */
-#define CHECK_THROW(cond, E) \
-  ::acc::throwOnFail<E>((cond), "Check failed: " #cond)
+#define ACC_CHECK_THROW(cond, E) \
+  ::acc::throwOnFail<E>((cond), "Check failed: " #cond \
+                        " @(", __FILE__, ":", __LINE__, ")")
+
+//////////////////////////////////////////////////////////////////////
+
+template <class Tag = void, bool tracing = false>
+class ExceptionBase : public std::exception {
+ public:
+  template <class... Args>
+  explicit ExceptionBase(Args&&... args)
+    : msg_(to<fbstring>(std::forward<Args>(args)...)) {
+    if (tracing) {
+      auto trace = recordBacktrace();
+      toAppend(", trace info:", &msg_);
+      for (auto& s : trace) {
+        toAppend('\n', s, &msg_);
+      }
+    }
+  }
+
+  virtual ~ExceptionBase() {}
+
+  virtual const char* what() const noexcept {
+    return msg_.c_str();
+  }
+
+ private:
+  fbstring msg_;
+};
+
+typedef ExceptionBase<> Exception;
+
+#define ACC_EXCEPTION(ex_name) \
+  struct ex_name##Tag {}; \
+  typedef acc::ExceptionBase<ex_name##Tag> ex_name
+
+#define ACC_TRACING_EXCEPTION(ex_name) \
+  struct ex_name##Tag {}; \
+  typedef acc::ExceptionBase<ex_name##Tag, true> ex_name
+
+#define ACC_THROW(E, ...) \
+  throw E(#E, " @(", __FILE__, ":", __LINE__, "): \"", ##__VA_ARGS__, "\"")
 
 } // namespace acc

@@ -44,6 +44,9 @@ ACC_HAS_TRUE_XXX(IsZeroInitializable)
 
 } // namespace traits_detail
 
+#define ACC_ASSUME_RELOCATABLE(...) \
+  struct IsRelocatable<  __VA_ARGS__ > : std::true_type {};
+
 template <class T> struct IsTriviallyCopyable
   : std::integral_constant<bool,
       !std::is_class<T>::value ||
@@ -62,6 +65,18 @@ template <class T> struct IsZeroInitializable
       !std::is_class<T>::value ||
       traits_detail::has_true_IsZeroInitializable<T>::value
     > {};
+
+/**
+ * Check if is a specialization. See:
+ * https://stackoverflow.com/questions/16337610/how-to-know-if-a-type-is-a-specialization-of-stdvector
+ */
+template<typename Test, template<typename...> class Ref>
+struct IsSpecialization
+  : std::false_type {};
+
+template<template<typename...> class Ref, typename... Args>
+struct IsSpecialization<Ref<Args...>, Ref>
+  : std::true_type {};
 
 } // namespace acc
 

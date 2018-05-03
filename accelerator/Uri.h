@@ -81,6 +81,7 @@ class Uri {
   String toString() const;
 
   std::string str() const { return toString<std::string>(); }
+  fbstring fbstr() const { return toString<fbstring>(); }
 
   void setPort(uint16_t port) {
     hasAuthority_ = true;

@@ -30,6 +30,7 @@
 #include <type_traits>
 #include <boost/operators.hpp>
 
+#include "accelerator/FBString.h"
 #include "accelerator/Macro.h"
 #include "accelerator/SpookyHashV2.h"
 
@@ -228,6 +229,34 @@ class Range : private boost::totally_ordered<Range<Iter> > {
       : Range(other.subpiece(first, length))
     { }
 
+  template <class T = Iter, typename detail::IsCharPointer<T>::const_type = 0>
+  /* implicit */ Range(const fbstring& str)
+      : b_(str.data()), e_(b_ + str.size()) {}
+
+  template <class T = Iter, typename detail::IsCharPointer<T>::const_type = 0>
+  Range(const fbstring& str, fbstring::size_type startFrom) {
+    if (UNLIKELY(startFrom > str.size())) {
+      throw std::out_of_range("index out of range");
+    }
+    b_ = str.data() + startFrom;
+    e_ = str.data() + str.size();
+  }
+
+  template <class T = Iter, typename detail::IsCharPointer<T>::const_type = 0>
+  Range(const fbstring& str,
+        fbstring::size_type startFrom,
+        fbstring::size_type size) {
+    if (UNLIKELY(startFrom > str.size())) {
+      throw std::out_of_range("index out of range");
+    }
+    b_ = str.data() + startFrom;
+    if (str.size() - startFrom < size) {
+      e_ = str.data() + str.size();
+    } else {
+      e_ = b_ + size;
+    }
+  }
+
   // Allow implicit conversion from Range<const char*> (aka StringPiece) to
   // Range<const unsigned char*> (aka ByteRange), as they're both frequently
   // used to represent ranges of bytes.  Allow explicit conversion in the other
@@ -344,6 +373,9 @@ class Range : private boost::totally_ordered<Range<Iter> > {
   // Works only for Range<const char*> and Range<char*>
   std::string str() const { return std::string((const char*)b_, size()); }
   std::string toString() const { return str(); }
+  // Works only for Range<const char*> and Range<char*>
+  fbstring fbstr() const { return fbstring(b_, size()); }
+  fbstring toFbstring() const { return fbstr(); }
 
   const_range_type castToConst() const {
     return const_range_type(*this);
