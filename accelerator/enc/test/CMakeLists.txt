@@ -12,7 +12,9 @@ foreach(test_src ${ACCELERATOR_ENC_TEST_SRCS})
     add_test(${test} ${test} CONFIGURATIONS ${CMAKE_BUILD_TYPE})
 endforeach()
 
-execute_process(
-    COMMAND ln -fs "${PROJECT_SOURCE_DIR}/accelerator/enc/test/char.pecker.def"
-                   "${PROJECT_BINARY_DIR}/accelerator/enc/test/char.pecker.def"
-)
+if(NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+    execute_process(
+        COMMAND ln -fs "${PROJECT_SOURCE_DIR}/accelerator/enc/test/char.pecker.def"
+                       "${PROJECT_BINARY_DIR}/accelerator/enc/test/char.pecker.def"
+    )
+endif()
