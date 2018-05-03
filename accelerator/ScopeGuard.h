@@ -22,6 +22,8 @@
 #include <functional>
 #include <new>
 
+#include "accelerator/Macro.h"
+
 namespace __cxxabiv1 {
 // forward declaration (originally defined in unwind-cxx.h from from libstdc++)
 struct __cxa_eh_globals;
