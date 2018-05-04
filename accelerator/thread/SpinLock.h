@@ -40,7 +40,7 @@
 #include <type_traits>
 
 #include "accelerator/Asm.h"
-#include "accelerator/Macro.h"
+#include "accelerator/CPortability.h"
 
 namespace acc {
 

@@ -66,6 +66,24 @@ sum(const Container& container) {
   return sumValue;
 }
 
+// for sorted container
+template <class Container>
+typename std::enable_if<
+  std::is_arithmetic<typename Container::value_type>::value,
+  typename Container::value_type>::type
+median(const Container& container) {
+  size_t n = container.size();
+  if (n > 0) {
+    auto it = container.begin() + n / 2;
+    if (n % 2 != 0) {
+      return *it;
+    } else {
+      return (*it + *(it - 1)) / 2;
+    }
+  }
+  return 0;
+}
+
 namespace detail {
 BOOST_MPL_HAS_XXX_TRAIT_DEF(mapped_type);
 }
