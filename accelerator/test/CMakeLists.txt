@@ -13,7 +13,6 @@ set(ACCELERATOR_BASE_TEST_SRCS
     StringTest.cpp
     TimedHeapTest.cpp
     TraitsTest.cpp
-    UnicodeTest.cpp
 )
 
 foreach(test_src ${ACCELERATOR_BASE_TEST_SRCS})

@@ -22,7 +22,6 @@ set(ACCELERATOR_BASE_SRCS
     Time.cpp
     Unicode.cpp
     Uri.cpp
-    Utf8StringPiece.cpp
     Uuid.cpp
 )
 add_library(accelerator_base OBJECT ${ACCELERATOR_BASE_SRCS})

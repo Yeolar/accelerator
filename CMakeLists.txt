@@ -21,7 +21,6 @@ set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package(Threads REQUIRED)
 find_package(Boost REQUIRED COMPONENTS context regex)
 find_package(GFlags REQUIRED)
-find_package(ICU REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 
@@ -42,8 +41,6 @@ link_libraries(
     ${CMAKE_DL_LIBS}
     ${Boost_LIBRARIES}
     ${GFLAGS_LIBRARIES}
-    ${ICU_LIBRARIES}
-    ${ICU_I18N_LIBRARIES}
     ${OPENSSL_LIBRARIES}
     ${ZLIB_LIBRARIES}
 )
@@ -92,7 +89,6 @@ add_subdirectory(accelerator)
 add_subdirectory(accelerator/compression)
 add_subdirectory(accelerator/concurrency)
 add_subdirectory(accelerator/double-conversion)
-add_subdirectory(accelerator/enc)
 add_subdirectory(accelerator/event)
 add_subdirectory(accelerator/gen)
 add_subdirectory(accelerator/io)
@@ -106,7 +102,6 @@ add_library(accelerator_static STATIC
     $<TARGET_OBJECTS:accelerator_base>
     $<TARGET_OBJECTS:accelerator_compression>
     $<TARGET_OBJECTS:accelerator_concurrency>
-    $<TARGET_OBJECTS:accelerator_enc>
     $<TARGET_OBJECTS:accelerator_event>
     $<TARGET_OBJECTS:accelerator_io>
     $<TARGET_OBJECTS:accelerator_scheduler>
@@ -121,7 +116,6 @@ add_library(accelerator_shared SHARED
     $<TARGET_OBJECTS:accelerator_base>
     $<TARGET_OBJECTS:accelerator_compression>
     $<TARGET_OBJECTS:accelerator_concurrency>
-    $<TARGET_OBJECTS:accelerator_enc>
     $<TARGET_OBJECTS:accelerator_event>
     $<TARGET_OBJECTS:accelerator_io>
     $<TARGET_OBJECTS:accelerator_scheduler>
@@ -152,7 +146,6 @@ if(GTEST_FOUND)
     add_subdirectory(accelerator/test)
     add_subdirectory(accelerator/compression/test)
     add_subdirectory(accelerator/concurrency/test)
-    add_subdirectory(accelerator/enc/test)
     add_subdirectory(accelerator/gen/test)
     add_subdirectory(accelerator/io/test)
     add_subdirectory(accelerator/scheduler/test)
