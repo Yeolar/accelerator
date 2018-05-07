@@ -1,29 +1,8 @@
 # Copyright 2017 Yeolar
 
-set(ACCELERATOR_BASE_SRCS
-    Arena.cpp
-    Benchmark.cpp
-    Checksum.cpp
-    Conv.cpp
-    Demangle.cpp
-    dynamic.cpp
-    EscapeTables.cpp
-    json.cpp
-    LogBase.cpp
-    MemoryMapping.cpp
-    ProcessUtil.cpp
-    Random.cpp
-    Range.cpp
-    RendezvousHash.cpp
-    SpookyHashV2.cpp
-    String.cpp
-    SysUtil.cpp
-    TestUtil.cpp
-    Time.cpp
-    Unicode.cpp
-    Uri.cpp
-    Uuid.cpp
-)
+file(GLOB ACCELERATOR_BASE_SRCS *.cpp)
+file(GLOB ACCELERATOR_BASE_HDRS *.h)
+
 add_library(accelerator_base OBJECT ${ACCELERATOR_BASE_SRCS})
 
-install(FILES *.h DESTINATION include/accelerator)
+install(FILES ${ACCELERATOR_BASE_HDRS} DESTINATION include/accelerator)

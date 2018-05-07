@@ -1,8 +1,8 @@
 # Copyright 2017 Yeolar
 
-set(ACCELERATOR_STATS_SRCS
-    Monitor.cpp
-)
+file(GLOB ACCELERATOR_STATS_SRCS *.cpp)
+file(GLOB ACCELERATOR_STATS_HDRS *.h)
+
 add_library(accelerator_stats OBJECT ${ACCELERATOR_STATS_SRCS})
 
-install(FILES *.h DESTINATION include/accelerator/stats)
+install(FILES ${ACCELERATOR_STATS_HDRS} DESTINATION include/accelerator/stats)

@@ -1,11 +1,8 @@
 # Copyright 2017 Yeolar
 
-set(ACCELERATOR_THREAD_SRCS
-    CacheLocality.cpp
-    Futex.cpp
-    SharedMutex.cpp
-    ThreadUtil.cpp
-)
+file(GLOB ACCELERATOR_THREAD_SRCS *.cpp)
+file(GLOB ACCELERATOR_THREAD_HDRS *.h)
+
 add_library(accelerator_thread OBJECT ${ACCELERATOR_THREAD_SRCS})
 
-install(FILES *.h DESTINATION include/accelerator/thread)
+install(FILES ${ACCELERATOR_THREAD_HDRS} DESTINATION include/accelerator/thread)

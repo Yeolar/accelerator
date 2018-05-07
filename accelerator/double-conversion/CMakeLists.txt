@@ -1,25 +1,8 @@
-set(headers
-    bignum.h
-    cached-powers.h
-    diy-fp.h
-    double-conversion.h
-    fast-dtoa.h
-    fixed-dtoa.h
-    ieee.h
-    strtod.h
-    utils.h
-)
+# Copyright 2018 Yeolar
 
-add_library(double-conversion OBJECT
-    bignum.cc
-    bignum-dtoa.cc
-    cached-powers.cc
-    diy-fp.cc
-    double-conversion.cc
-    fast-dtoa.cc
-    fixed-dtoa.cc
-    strtod.cc
-    ${headers}
-)
+file(GLOB DOUBLE_CONVERSION_SRCS *.cc)
+file(GLOB DOUBLE_CONVERSION_HDRS *.h)
 
-install(FILES ${headers} DESTINATION include/accelerator/double-conversion)
+add_library(double-conversion OBJECT ${DOUBLE_CONVERSION_SRCS})
+
+install(FILES ${DOUBLE_CONVERSION_HDRS} DESTINATION include/accelerator/double-conversion)

@@ -1,10 +1,8 @@
 # Copyright 2017 Yeolar
 
-set(ACCELERATOR_COMPRESSION_SRCS
-    Compression.cpp
-    ZlibStreamCompressor.cpp
-    ZlibStreamDecompressor.cpp
-)
+file(GLOB ACCELERATOR_COMPRESSION_SRCS *.cpp)
+file(GLOB ACCELERATOR_COMPRESSION_HDRS *.h)
+
 add_library(accelerator_compression OBJECT ${ACCELERATOR_COMPRESSION_SRCS})
 
-install(FILES *.h DESTINATION include/accelerator/compression)
+install(FILES ${ACCELERATOR_COMPRESSION_HDRS} DESTINATION include/accelerator/compression)

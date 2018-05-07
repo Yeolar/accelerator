@@ -1,3 +1,5 @@
 # Copyright 2017 Yeolar
 
-install(FILES *.h DESTINATION include/accelerator/gen)
+file(GLOB ACCELERATOR_GEN_HDRS *.h)
+
+install(FILES ${ACCELERATOR_GEN_HDRS} DESTINATION include/accelerator/gen)

@@ -1,8 +1,8 @@
 # Copyright 2017 Yeolar
 
-set(ACCELERATOR_SSL_SRCS
-    OpenSSL.cpp
-)
+file(GLOB ACCELERATOR_SSL_SRCS *.cpp)
+file(GLOB ACCELERATOR_SSL_HDRS *.h)
+
 add_library(accelerator_ssl OBJECT ${ACCELERATOR_SSL_SRCS})
 
-install(FILES *.h DESTINATION include/accelerator/ssl)
+install(FILES ${ACCELERATOR_SSL_HDRS} DESTINATION include/accelerator/ssl)
