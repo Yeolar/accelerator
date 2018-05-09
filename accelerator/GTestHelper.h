@@ -42,7 +42,9 @@ typename std::enable_if<std::is_same<T, double>::value>::type
 expectEq(const T& a, const T& b);
 
 template <class T>
-typename std::enable_if<std::is_convertible<T, StringPiece>::value>::type
+typename std::enable_if<
+  std::is_same<T, StringPiece>::value ||
+  IsSomeString<T>::value>::type
 expectEq(const T& a, const T& b);
 
 template <class T>
