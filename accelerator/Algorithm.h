@@ -20,7 +20,8 @@
 #include <algorithm>
 #include <limits>
 #include <type_traits>
-#include <boost/mpl/has_xxx.hpp>
+
+#include "accelerator/Traits.h"
 
 namespace acc {
 
@@ -84,21 +85,8 @@ median(const Container& container) {
   return 0;
 }
 
-namespace detail {
-BOOST_MPL_HAS_XXX_TRAIT_DEF(mapped_type);
-}
-
 template <class Container>
-typename std::enable_if<
-  detail::has_mapped_type<Container>::value, bool>::type
-contain(const Container& container,
-        const typename Container::key_type& key) {
-  return container.find(key) != container.end();
-}
-
-template <class Container>
-typename std::enable_if<
-  !detail::has_mapped_type<Container>::value, bool>::type
+typename std::enable_if<has_iterator<Container>::value, bool>::type
 contain(const Container& container,
         const typename Container::value_type& value) {
   return std::find(container.begin(), container.end(), value)
@@ -106,19 +94,26 @@ contain(const Container& container,
 }
 
 template <class Container>
-typename std::enable_if<
-  !detail::has_mapped_type<Container>::value>::type
+typename std::enable_if<has_iterator<Container>::value, bool>::type
+containKey(const Container& container,
+           const typename Container::key_type& key) {
+  return container.find(key) != container.end();
+}
+
+template <class Container, class T>
+typename std::enable_if<has_iterator<Container>::value>::type
+remove(Container& container, const typename Container::value_type& value) {
+  container.erase(std::remove(container.begin(), container.end(), value),
+                  container.end());
+}
+
+template <class Container>
+typename std::enable_if<has_iterator<Container>::value>::type
 subrange(Container& container, size_t begin, size_t end) {
   size_t b = std::min(begin, container.size());
   size_t e = std::min(end, container.size());
   container.erase(container.begin() + e, container.end());
   container.erase(container.begin(), container.begin() + b);
-}
-
-template <class Container, class T>
-void remove(Container& container, const T& value) {
-  container.erase(std::remove(container.begin(), container.end(), value),
-                  container.end());
 }
 
 } // namespace acc
