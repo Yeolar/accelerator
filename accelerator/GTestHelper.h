@@ -19,7 +19,7 @@
 #include <map>
 #include <vector>
 
-#include "accelerator/Range.h"
+#include "accelerator/Conv.h"
 #include "accelerator/Traits.h"
 
 namespace acc {
