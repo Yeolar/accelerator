@@ -82,10 +82,12 @@ struct IsSpecialization<Ref<Args...>, Ref>
  * has_xxx for container.
  */
 BOOST_MPL_HAS_XXX_TRAIT_DEF(iterator);
+BOOST_MPL_HAS_XXX_TRAIT_DEF(first_type);
+BOOST_MPL_HAS_XXX_TRAIT_DEF(second_type);
 BOOST_MPL_HAS_XXX_TRAIT_DEF(key_type);
+BOOST_MPL_HAS_XXX_TRAIT_DEF(value_type);
 BOOST_MPL_HAS_XXX_TRAIT_DEF(mapped_type);
 BOOST_MPL_HAS_XXX_TRAIT_DEF(size_type);
-BOOST_MPL_HAS_XXX_TRAIT_DEF(value_type);
 
 } // namespace acc
 

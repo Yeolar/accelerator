@@ -42,19 +42,19 @@ typename std::enable_if<std::is_same<T, double>::value>::type
 expectEq(const T& a, const T& b);
 
 template <class T>
-typename std::enable_if<IsSomeString<T>::value>::type
+typename std::enable_if<std::is_convertible<T, StringPiece>::value>::type
 expectEq(const T& a, const T& b);
 
 template <class T>
-typename std::enable_if<std::is_same<T, StringPiece>::value>::type
+typename std::enable_if<
+  has_first_type<T>::value &&
+  has_second_type<T>::value>::type
 expectEq(const T& a, const T& b);
 
 template <class T>
-typename std::enable_if<IsSpecialization<T, std::pair>::value>::type
-expectEq(const T& a, const T& b);
-
-template <class T>
-typename std::enable_if<has_iterator<T>::value>::type
+typename std::enable_if<
+  has_iterator<T>::value &&
+  !std::is_convertible<T, StringPiece>::value>::type
 expectEq(const T& a, const T& b);
 
 } // namespace test

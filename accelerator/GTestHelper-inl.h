@@ -44,26 +44,24 @@ expectEq(const T& a, const T& b) {
 }
 
 template <class T>
-typename std::enable_if<IsSomeString<T>::value>::type
-expectEq(const T& a, const T& b) {
-  EXPECT_STREQ(a.c_str(), b.c_str());
-}
-
-template <class T>
-typename std::enable_if<std::is_same<T, StringPiece>::value>::type
+typename std::enable_if<std::is_convertible<T, StringPiece>::value>::type
 expectEq(const T& a, const T& b) {
   EXPECT_STREQ(a.data(), b.data());
 }
 
 template <class T>
-typename std::enable_if<IsSpecialization<T, std::pair>::value>::type
+typename std::enable_if<
+  has_first_type<T>::value &&
+  has_second_type<T>::value>::type
 expectEq(const T& a, const T& b) {
   expectEq(a.first, b.first);
   expectEq(a.second, b.second);
 }
 
 template <class T>
-typename std::enable_if<has_iterator<T>::value>::type
+typename std::enable_if<
+  has_iterator<T>::value &&
+  !std::is_convertible<T, StringPiece>::value>::type
 expectEq(const T& a, const T& b) {
   expectEq(a.size(), b.size());
   for (auto i = a.begin(), j = b.begin(); i != a.end(); i++, j++) {
