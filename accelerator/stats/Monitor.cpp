@@ -84,7 +84,7 @@ void Monitor::addToMonitor(const std::string& name, int type, int value) {
   }
   auto key = prefix_.empty() ? name : prefix_ + '.' + name;
   std::lock_guard<std::mutex> guard(lock_);
-  if (!contain(mvalues_, key)) {
+  if (!containKey(mvalues_, key)) {
     mvalues_.emplace(key, MonitorValue(type));
   }
   auto mvalue = get_ptr(mvalues_, key);
