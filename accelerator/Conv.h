@@ -1335,38 +1335,14 @@ template <class Tgt, class Src>
 typename std::enable_if<
   std::is_enum<Src>::value && !std::is_same<Src, Tgt>::value, Tgt>::type
 to(const Src & value) {
-  /* static */ if (Src(-1) < 0) {
-    /* static */ if (sizeof(Src) <= sizeof(int)) {
-      return to<Tgt>(static_cast<int>(value));
-    } else {
-      return to<Tgt>(static_cast<long>(value));
-    }
-  } else {
-    /* static */ if (sizeof(Src) <= sizeof(int)) {
-      return to<Tgt>(static_cast<unsigned int>(value));
-    } else {
-      return to<Tgt>(static_cast<unsigned long>(value));
-    }
-  }
+  return to<Tgt>(static_cast<typename std::underlying_type<Src>::type>(value));
 }
 
 template <class Tgt, class Src>
 typename std::enable_if<
   std::is_enum<Tgt>::value && !std::is_same<Src, Tgt>::value, Tgt>::type
 to(const Src & value) {
-  /* static */ if (Tgt(-1) < 0) {
-    /* static */ if (sizeof(Tgt) <= sizeof(int)) {
-      return static_cast<Tgt>(to<int>(value));
-    } else {
-      return static_cast<Tgt>(to<long>(value));
-    }
-  } else {
-    /* static */ if (sizeof(Tgt) <= sizeof(int)) {
-      return static_cast<Tgt>(to<unsigned int>(value));
-    } else {
-      return static_cast<Tgt>(to<unsigned long>(value));
-    }
-  }
+  return static_cast<Tgt>(to<typename std::underlying_type<Tgt>::type>(value));
 }
 
 } // namespace acc
