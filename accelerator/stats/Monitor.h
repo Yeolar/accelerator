@@ -17,10 +17,10 @@
 #pragma once
 
 #include <algorithm>
-#include <map>
 #include <mutex>
 #include <string>
 #include <thread>
+#include <unordered_map>
 
 #include "accelerator/Singleton.h"
 
@@ -28,35 +28,35 @@ namespace acc {
 
 class MonitorValue {
  public:
-  enum {
-    MON_CNT = 1,
-    MON_AVG = 2,
-    MON_MIN = 4,
-    MON_MAX = 8,
-    MON_SUM = 16,
+  enum Type : char {
+    CNT = 1,
+    AVG = 1 << 1,
+    MIN = 1 << 2,
+    MAX = 1 << 3,
+    SUM = 1 << 4,
   };
 
-  explicit MonitorValue(int type);
+  explicit MonitorValue(Type type);
 
   void reset();
 
-  int type() const { return type_; }
+  Type type() const { return type_; }
   bool isSet() const { return isset_; }
 
-  void add(int value = 0);
+  void add(int64_t value = 0);
 
-  int value() const;
+  int64_t value() const;
 
  private:
-  int type_;
+  Type type_;
   bool isset_;
-  int count_;
+  int32_t count_;
   int64_t value_;
 };
 
 class Monitor {
  public:
-  typedef std::map<std::string, int> MonMap;
+  typedef std::unordered_map<std::string, int> MonMap;
 
   class Sender {
    public:
@@ -81,14 +81,16 @@ class Monitor {
     sender_ = std::move(sender);
   }
 
-  void addToMonitor(const std::string& name, int type, int value = 0);
+  void addToMonitor(const std::string& name,
+                    MonitorValue::Type type,
+                    int64_t value = 0);
 
  private:
   void dump(MonMap& data);
 
   std::string prefix_;
   std::unique_ptr<Sender> sender_;
-  std::map<std::string, MonitorValue> mvalues_;
+  std::unordered_map<std::string, MonitorValue> mvalues_;
   std::mutex lock_;
   std::thread handle_;
   std::atomic<bool> open_{false};
@@ -98,7 +100,7 @@ class Monitor {
 
 #define ACCMON(name, type, value) \
   ::acc::Singleton< ::acc::Monitor>::get()->addToMonitor( \
-    name, ::acc::MonitorValue::MON_##type, value)
+    name, ::acc::MonitorValue::Type::type, value)
 #define ACCMON_CNT(name)        ACCMON(name, CNT, 0)
 #define ACCMON_AVG(name, value) ACCMON(name, AVG, value)
 #define ACCMON_MIN(name, value) ACCMON(name, MIN, value)

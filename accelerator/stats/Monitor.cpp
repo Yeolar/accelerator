@@ -24,35 +24,35 @@
 
 namespace acc {
 
-MonitorValue::MonitorValue(int type) : type_(type) {
+MonitorValue::MonitorValue(Type type) : type_(type) {
   reset();
 }
 
 void MonitorValue::reset() {
-  isset_ = type_ & (MON_CNT | MON_SUM);
+  isset_ = type_ & (CNT | SUM);
   count_ = 0;
   value_ = 0;
 }
 
-void MonitorValue::add(int value) {
+void MonitorValue::add(int64_t value) {
   isset_ = true;
   count_++;
   switch (type_) {
-    case MON_AVG:
-    case MON_SUM: value_ += value; break;
-    case MON_MIN: value_ = std::min(value_, (int64_t)value); break;
-    case MON_MAX: value_ = std::max(value_, (int64_t)value); break;
+    case AVG:
+    case SUM: value_ += value; break;
+    case MIN: value_ = std::min(value_, value); break;
+    case MAX: value_ = std::max(value_, value); break;
     default: break;
   }
 }
 
-int MonitorValue::value() const {
+int64_t MonitorValue::value() const {
   switch (type_) {
-    case MON_CNT: return count_;
-    case MON_AVG: return count_ != 0 ? value_ / count_ : 0;
-    case MON_MIN:
-    case MON_MAX:
-    case MON_SUM: return value_;
+    case CNT: return count_;
+    case AVG: return count_ != 0 ? value_ / count_ : 0;
+    case MIN:
+    case MAX:
+    case SUM: return value_;
     default: return 0;
   }
 }
@@ -78,7 +78,9 @@ void Monitor::run() {
   }
 }
 
-void Monitor::addToMonitor(const std::string& name, int type, int value) {
+void Monitor::addToMonitor(const std::string& name,
+                           MonitorValue::Type type,
+                           int64_t value) {
   if (!open_) {
     return;
   }
@@ -97,7 +99,7 @@ void Monitor::addToMonitor(const std::string& name, int type, int value) {
 }
 
 void Monitor::dump(MonMap& data) {
-  std::map<std::string, MonitorValue> mvalues;
+  std::unordered_map<std::string, MonitorValue> mvalues;
   {
     std::lock_guard<std::mutex> guard(lock_);
     mvalues.swap(mvalues_);
