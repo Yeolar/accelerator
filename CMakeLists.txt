@@ -155,13 +155,13 @@ endif()
 
 # Pack
 include(InstallRequiredSystemLibraries)
-set(CPACK_GENERATOR "DEB")
+set(CPACK_GENERATOR "DEB;TXZ")
 set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
 set(CPACK_PACKAGE_CONTACT "rdd@rddoc.com")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "foundation framework of rddoc.")
 set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-all-dev libgflags-dev libssl-dev zlib1g-dev")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-all-dev,libgflags-dev,libssl-dev,zlib1g-dev")
 include(CPack)
 

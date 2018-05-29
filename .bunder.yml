@@ -1,0 +1,9 @@
+# bunder config
+
+project:
+    accelerator
+
+build:
+    path: './build'
+
+depend:
