@@ -12,9 +12,8 @@ if(ACCELERATOR_INCLUDE_DIR)
   set(ACCELERATOR_FIND_QUIETLY TRUE)
 endif()
 
-find_path(ACCELERATOR_INCLUDE_DIR accelerator/accelerator-config.h)
-
-find_library(ACCELERATOR_LIBRARY accelerator)
+find_path(ACCELERATOR_INCLUDE_DIR accelerator/accelerator-config.h PATHS ${PROJECT_BINARY_DIR}/accelerator/accelerator/include)
+find_library(ACCELERATOR_LIBRARY accelerator PATHS ${PROJECT_BINARY_DIR}/accelerator/accelerator/lib)
 
 # handle the QUIETLY and REQUIRED arguments and set ACCELERATOR_FOUND to TRUE 
 # if all listed variables are TRUE

@@ -9,9 +9,7 @@ project(accelerator)
 
 cmake_minimum_required(VERSION 3.2)
 
-set(CMAKE_MODULE_PATH  ${PROJECT_SOURCE_DIR}/cmake-scripts)
-set(CMAKE_INCLUDE_PATH ${PROJECT_BINARY_DIR})
-set(CMAKE_LIBRARY_PATH ${PROJECT_BINARY_DIR})
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake-scripts)
 
 # Set project version
 set(VERSION_MAJOR 1)
