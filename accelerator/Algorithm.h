@@ -100,7 +100,7 @@ containKey(const Container& container,
   return container.find(key) != container.end();
 }
 
-template <class Container, class T>
+template <class Container>
 typename std::enable_if<has_iterator<Container>::value>::type
 remove(Container& container, const typename Container::value_type& value) {
   container.erase(std::remove(container.begin(), container.end(), value),
