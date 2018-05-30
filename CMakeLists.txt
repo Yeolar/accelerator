@@ -9,7 +9,9 @@ project(accelerator)
 
 cmake_minimum_required(VERSION 3.2)
 
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake-scripts")
+set(CMAKE_MODULE_PATH  ${PROJECT_SOURCE_DIR}/cmake-scripts)
+set(CMAKE_INCLUDE_PATH ${PROJECT_BINARY_DIR})
+set(CMAKE_LIBRARY_PATH ${PROJECT_BINARY_DIR})
 
 # Set project version
 set(VERSION_MAJOR 1)
@@ -80,8 +82,8 @@ if(GFLAGS_FOUND)
 endif()
 
 configure_file(
-    "${PROJECT_SOURCE_DIR}/accelerator/accelerator-config.h.in"
-    "${PROJECT_SOURCE_DIR}/accelerator/accelerator-config.h"
+    ${PROJECT_SOURCE_DIR}/accelerator/accelerator-config.h.in
+    ${PROJECT_SOURCE_DIR}/accelerator/accelerator-config.h
 )
 
 # Work on all sub directories
