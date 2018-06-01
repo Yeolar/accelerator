@@ -1,12 +1,12 @@
 /*
  * Copyright 2017 Facebook, Inc.
- * Copyright 2017 Yeolar
+ * Copyright 2018 Yeolar
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,12 +18,29 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
-#include <iterator>
+#include <cstring>
+#include <limits>
+#include <string>
+#include <tuple>
+#include <type_traits>
 #include <utility>
 
-namespace acc {
-namespace hash {
+#include "accelerator/Bits.h"
+#include "accelerator/SpookyHashV2.h"
+#include "accelerator/Utility.h"
+
+/*
+ * Various hashing functions.
+ */
+
+namespace acc { namespace hash {
+
+// This is a general-purpose way to create a single hash from multiple
+// hashable objects. hash_combine_generic takes a class Hasher implementing
+// hash<T>; hash_combine uses a default hasher StdHasher that uses std::hash.
+// hash_combine_generic hashes each argument and combines those hashes in
+// an order-dependent way to yield a new hash.
+
 
 // This is the Hash128to64 function from Google's cityhash (available
 // under the MIT License).  We use it to reduce multiple 64 bit hashes
@@ -46,16 +63,19 @@ inline size_t hash_combine_generic() {
 }
 
 template <
-  class Iter,
-  class Hash = std::hash<typename std::iterator_traits<Iter>::value_type>>
-uint64_t hash_range(Iter begin, Iter end,
-          uint64_t hash = 0,
-          Hash hasher = Hash()) {
+    class Iter,
+    class Hash = std::hash<typename std::iterator_traits<Iter>::value_type>>
+uint64_t hash_range(Iter begin,
+                    Iter end,
+                    uint64_t hash = 0,
+                    Hash hasher = Hash()) {
   for (; begin != end; ++begin) {
     hash = hash_128_to_64(hash, hasher(*begin));
   }
   return hash;
 }
+
+inline uint32_t twang_32from64(uint64_t key);
 
 template <class Hasher, typename T, typename... Ts>
 size_t hash_combine_generic(const T& t, const Ts&... ts) {
@@ -64,9 +84,17 @@ size_t hash_combine_generic(const T& t, const Ts&... ts) {
     return seed;
   }
   size_t remainder = hash_combine_generic<Hasher>(ts...);
-  return hash_128_to_64(seed, remainder);
+  /* static */ if (sizeof(size_t) == sizeof(uint32_t)) {
+    return twang_32from64((uint64_t(seed) << 32) | remainder);
+  } else {
+    return static_cast<size_t>(hash_128_to_64(seed, remainder));
+  }
 }
 
+// Simply uses std::hash to hash.  Note that std::hash is not guaranteed
+// to be a very good hash function; provided std::hash doesn't collide on
+// the individual inputs, you are fine, but that won't be true for, say,
+// strings or pairs
 class StdHasher {
  public:
   template <typename T>
@@ -186,9 +214,12 @@ inline uint32_t jenkins_rev_unmix32(uint32_t key) {
 
 const uint32_t FNV_32_HASH_START = 2166136261UL;
 const uint64_t FNV_64_HASH_START = 14695981039346656037ULL;
+const uint64_t FNVA_64_HASH_START = 14695981039346656037ULL;
 
-inline uint32_t fnv32(const char* s,
-                      uint32_t hash = FNV_32_HASH_START) {
+inline uint32_t fnv32(const char* buf, uint32_t hash = FNV_32_HASH_START) {
+  // forcing signed char, since other platforms can use unsigned
+  const signed char* s = reinterpret_cast<const signed char*>(buf);
+
   for (; *s; ++s) {
     hash += (hash << 1) + (hash << 4) + (hash << 7) +
             (hash << 8) + (hash << 24);
@@ -200,7 +231,8 @@ inline uint32_t fnv32(const char* s,
 inline uint32_t fnv32_buf(const void* buf,
                           size_t n,
                           uint32_t hash = FNV_32_HASH_START) {
-  const char* char_buf = reinterpret_cast<const char*>(buf);
+  // forcing signed char, since other platforms can use unsigned
+  const signed char* char_buf = reinterpret_cast<const signed char*>(buf);
 
   for (size_t i = 0; i < n; ++i) {
     hash += (hash << 1) + (hash << 4) + (hash << 7) +
@@ -216,11 +248,13 @@ inline uint32_t fnv32(const std::string& str,
   return fnv32_buf(str.data(), str.size(), hash);
 }
 
-inline uint64_t fnv64(const char* s,
-                      uint64_t hash = FNV_64_HASH_START) {
+inline uint64_t fnv64(const char* buf, uint64_t hash = FNV_64_HASH_START) {
+  // forcing signed char, since other platforms can use unsigned
+  const signed char* s = reinterpret_cast<const signed char*>(buf);
+
   for (; *s; ++s) {
     hash += (hash << 1) + (hash << 4) + (hash << 5) + (hash << 7) +
-            (hash << 8) + (hash << 40);
+      (hash << 8) + (hash << 40);
     hash ^= *s;
   }
   return hash;
@@ -229,7 +263,8 @@ inline uint64_t fnv64(const char* s,
 inline uint64_t fnv64_buf(const void* buf,
                           size_t n,
                           uint64_t hash = FNV_64_HASH_START) {
-  const char* char_buf = reinterpret_cast<const char*>(buf);
+  // forcing signed char, since other platforms can use unsigned
+  const signed char* char_buf = reinterpret_cast<const signed char*>(buf);
 
   for (size_t i = 0; i < n; ++i) {
     hash += (hash << 1) + (hash << 4) + (hash << 5) + (hash << 7) +
@@ -244,7 +279,226 @@ inline uint64_t fnv64(const std::string& str,
   return fnv64_buf(str.data(), str.size(), hash);
 }
 
+inline uint64_t fnva64_buf(const void* buf,
+                           size_t n,
+                           uint64_t hash = FNVA_64_HASH_START) {
+  const uint8_t* char_buf = reinterpret_cast<const uint8_t*>(buf);
+
+  for (size_t i = 0; i < n; ++i) {
+    hash ^= char_buf[i];
+    hash += (hash << 1) + (hash << 4) + (hash << 5) + (hash << 7) +
+            (hash << 8) + (hash << 40);
+  }
+  return hash;
+}
+
+inline uint64_t fnva64(const std::string& str,
+                       uint64_t hash = FNVA_64_HASH_START) {
+  return fnva64_buf(str.data(), str.size(), hash);
+}
+
+/*
+ * Paul Hsieh: http://www.azillionmonkeys.com/qed/hash.html
+ */
+
+#define get16bits(d) acc::loadUnaligned<uint16_t>(d)
+
+inline uint32_t hsieh_hash32_buf(const void* buf, size_t len) {
+  // forcing signed char, since other platforms can use unsigned
+  const unsigned char* s = reinterpret_cast<const unsigned char*>(buf);
+  uint32_t hash = static_cast<uint32_t>(len);
+  uint32_t tmp;
+  size_t rem;
+
+  if (len <= 0 || buf == nullptr) {
+    return 0;
+  }
+
+  rem = len & 3;
+  len >>= 2;
+
+  /* Main loop */
+  for (;len > 0; len--) {
+    hash  += get16bits (s);
+    tmp    = (get16bits (s+2) << 11) ^ hash;
+    hash   = (hash << 16) ^ tmp;
+    s  += 2*sizeof (uint16_t);
+    hash  += hash >> 11;
+  }
+
+  /* Handle end cases */
+  switch (rem) {
+  case 3:
+    hash += get16bits(s);
+    hash ^= hash << 16;
+    hash ^= s[sizeof (uint16_t)] << 18;
+    hash += hash >> 11;
+    break;
+  case 2:
+    hash += get16bits(s);
+    hash ^= hash << 11;
+    hash += hash >> 17;
+    break;
+  case 1:
+    hash += *s;
+    hash ^= hash << 10;
+    hash += hash >> 1;
+  }
+
+  /* Force "avalanching" of final 127 bits */
+  hash ^= hash << 3;
+  hash += hash >> 5;
+  hash ^= hash << 4;
+  hash += hash >> 17;
+  hash ^= hash << 25;
+  hash += hash >> 6;
+
+  return hash;
+};
+
+#undef get16bits
+
+inline uint32_t hsieh_hash32(const char* s) {
+  return hsieh_hash32_buf(s, std::strlen(s));
+}
+
+inline uint32_t hsieh_hash32_str(const std::string& str) {
+  return hsieh_hash32_buf(str.data(), str.size());
+}
+
+//////////////////////////////////////////////////////////////////////
+
 } // namespace hash
+
+namespace detail {
+
+struct integral_hasher {
+  template <typename I>
+  size_t operator()(I const& i) const {
+    static_assert(sizeof(I) <= 8, "Input type is too wide");
+    /* constexpr */ if (sizeof(I) <= 4) {
+      auto const i32 = static_cast<int32_t>(i); // impl accident: sign-extends
+      auto const u32 = static_cast<uint32_t>(i32);
+      return static_cast<size_t>(hash::jenkins_rev_mix32(u32));
+    } else {
+      auto const u64 = static_cast<uint64_t>(i);
+      return static_cast<size_t>(hash::twang_mix64(u64));
+    }
+  }
+};
+
+struct float_hasher {
+  template <typename F>
+  size_t operator()(F const& f) const {
+    static_assert(sizeof(F) <= 8, "Input type is too wide");
+
+    if (f == F{}) { // Ensure 0 and -0 get the same hash.
+      return 0;
+    }
+
+    /* constexpr */ if (sizeof(F) <= 4) {
+      uint32_t u32 = 0;
+      memcpy(&u32, &f, sizeof(F));
+      return static_cast<size_t>(hash::jenkins_rev_mix32(u32));
+    } else {
+      uint64_t u64 = 0;
+      memcpy(&u64, &f, sizeof(F));
+      return static_cast<size_t>(hash::twang_mix64(u64));
+    }
+  }
+};
+
+} // namespace detail
+
+template <class Key, class Enable = void>
+struct hasher;
+
+struct Hash {
+  template <class T>
+  size_t operator()(const T& v) const {
+    return hasher<T>()(v);
+  }
+
+  template <class T, class... Ts>
+  size_t operator()(const T& t, const Ts&... ts) const {
+    return hash::hash_128_to_64((*this)(t), (*this)(ts...));
+  }
+};
+
+template <>
+struct hasher<bool> {
+  size_t operator()(bool key) const {
+    // Make sure that all the output bits depend on the input.
+    return key ? std::numeric_limits<size_t>::max() : 0;
+  }
+};
+
+template <>
+struct hasher<unsigned long long> : detail::integral_hasher {};
+
+template <>
+struct hasher<signed long long> : detail::integral_hasher {};
+
+template <>
+struct hasher<unsigned long> : detail::integral_hasher {};
+
+template <>
+struct hasher<signed long> : detail::integral_hasher {};
+
+template <>
+struct hasher<unsigned int> : detail::integral_hasher {};
+
+template <>
+struct hasher<signed int> : detail::integral_hasher {};
+
+template <>
+struct hasher<unsigned short> : detail::integral_hasher {};
+
+template <>
+struct hasher<signed short> : detail::integral_hasher {};
+
+template <>
+struct hasher<unsigned char> : detail::integral_hasher {};
+
+template <>
+struct hasher<signed char> : detail::integral_hasher {};
+
+template <> // char is a different type from both signed char and unsigned char
+struct hasher<char> : detail::integral_hasher {};
+
+template <>
+struct hasher<float> : detail::float_hasher {};
+
+template <>
+struct hasher<double> : detail::float_hasher {};
+
+template <> struct hasher<std::string> {
+  size_t operator()(const std::string& key) const {
+    return static_cast<size_t>(
+        hash::SpookyHashV2::Hash64(key.data(), key.size(), 0));
+  }
+};
+
+template <class T>
+struct hasher<T, typename std::enable_if<std::is_enum<T>::value, void>::type> {
+  size_t operator()(T key) const {
+    return Hash()(static_cast<typename std::underlying_type<T>::type>(key));
+  }
+};
+
+template <class T1, class T2>
+struct hasher<std::pair<T1, T2>> {
+  size_t operator()(const std::pair<T1, T2>& key) const {
+    return Hash()(key.first, key.second);
+  }
+};
+
+template <typename... Ts>
+struct hasher<std::tuple<Ts...>> {
+  size_t operator() (const std::tuple<Ts...>& key) const {
+    return applyTuple(Hash(), key);
+  }
+};
 
 // recursion
 template <size_t index, typename... Ts>
@@ -268,27 +522,27 @@ struct TupleHasher<0, Ts...> {
 
 } // namespace acc
 
+// Custom hash functions.
 namespace std {
+  // Hash function for pairs. Requires default hash functions for both
+  // items in the pair.
+  template <typename T1, typename T2>
+  struct hash<std::pair<T1, T2> > {
+   public:
+    size_t operator()(const std::pair<T1, T2>& x) const {
+      return acc::hash::hash_combine(x.first, x.second);
+    }
+  };
 
-// Hash function for pairs. Requires default hash functions for both
-// items in the pair.
-template <typename T1, typename T2>
-struct hash<std::pair<T1, T2>> {
- public:
-  size_t operator()(const std::pair<T1, T2>& x) const {
-    return acc::hash::hash_combine(x.first, x.second);
-  }
-};
+  // Hash function for tuples. Requires default hash functions for all types.
+  template <typename... Ts>
+  struct hash<std::tuple<Ts...>> {
+    size_t operator()(std::tuple<Ts...> const& key) const {
+      acc::TupleHasher<
+        std::tuple_size<std::tuple<Ts...>>::value - 1, // start index
+        Ts...> hasher;
 
-// Hash function for tuples. Requires default hash functions for all types.
-template <typename... Ts>
-struct hash<std::tuple<Ts...>> {
-  size_t operator()(std::tuple<Ts...> const& key) const {
-    acc::TupleHasher<
-      std::tuple_size<std::tuple<Ts...>>::value - 1, // start index
-      Ts...> hasher;
-    return hasher(key);
-  }
-};
-
+      return hasher(key);
+    }
+  };
 } // namespace std
