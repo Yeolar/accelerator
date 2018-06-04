@@ -85,6 +85,8 @@ median(const Container& container) {
   return 0;
 }
 
+//////////////////////////////////////////////////////////////////////
+
 template <class Container>
 typename std::enable_if<has_iterator<Container>::value, bool>::type
 contain(const Container& container,
@@ -114,6 +116,48 @@ subrange(Container& container, size_t begin, size_t end) {
   size_t e = std::min(end, container.size());
   container.erase(container.begin() + e, container.end());
   container.erase(container.begin(), container.begin() + b);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+template <class T>
+inline bool noneOf(const T& value, const T& arg) {
+  return value != arg;
+}
+
+template <class T, class... Args>
+inline bool noneOf(const T& value, const T& arg, const Args&... args) {
+  return value != arg && noneOf(value, args...);
+}
+
+template <class F, class T>
+inline bool noneOf(const F& func, const T& arg) {
+  return !func(arg);
+}
+
+template <class F, class T, class... Args>
+inline bool noneOf(const F& func, const T& arg, const Args&... args) {
+  return !func(arg) && noneOf(func, args...);
+}
+
+template <class T>
+inline bool anyOf(const T& value, const T& arg) {
+  return value == arg;
+}
+
+template <class T, class... Args>
+inline bool anyOf(const T& value, const T& arg, const Args&... args) {
+  return value == arg || anyOf(value, args...);
+}
+
+template <class F, class T>
+inline bool anyOf(const F& func, const T& arg) {
+  return func(arg);
+}
+
+template <class F, class T, class... Args>
+inline bool anyOf(const F& func, const T& arg, const Args&... args) {
+  return func(arg) || anyOf(func, args...);
 }
 
 } // namespace acc
