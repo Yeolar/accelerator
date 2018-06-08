@@ -19,8 +19,8 @@
 
 #include <memory>
 #include <zlib.h>
-#include <gflags/gflags.h>
 
+#include "accelerator/Portability.h"
 #include "accelerator/io/IOBuf.h"
 
 DECLARE_int64(zlib_decompresser_buffer_growth);

@@ -23,8 +23,8 @@
 #include <utility>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <gflags/gflags.h>
 
+#include "accelerator/Portability.h"
 #include "accelerator/io/HugePages.h"
 
 // Linux implementations of unmap/mlock/munlock take a kernel

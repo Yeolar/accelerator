@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <gflags/gflags.h>
+
 #include "accelerator/accelerator-config.h"
 
 #if ACC_UNUSUAL_GFLAGS_NAMESPACE

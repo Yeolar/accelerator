@@ -17,8 +17,8 @@
 #pragma once
 
 #include <vector>
-#include <gflags/gflags.h>
 
+#include "accelerator/Portability.h"
 #include "accelerator/String.h"
 #include "accelerator/Time.h"
 #include "accelerator/event/EventUtil.h"

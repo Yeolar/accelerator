@@ -23,8 +23,8 @@
 #include <limits>
 #include <type_traits>
 #include <boost/function_types/function_arity.hpp>
-#include <gflags/gflags.h>
 
+#include "accelerator/Portability.h"
 #include "accelerator/ScopeGuard.h"
 #include "accelerator/Time.h"
 #include "accelerator/Traits.h"
