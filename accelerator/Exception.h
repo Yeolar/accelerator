@@ -114,6 +114,21 @@ typedef ExceptionBase<> Exception;
   struct ex_name##Tag {}; \
   typedef acc::ExceptionBase<ex_name##Tag, true> ex_name
 
+// logic error
+ACC_TRACING_EXCEPTION(LogicError);
+ACC_TRACING_EXCEPTION(DomainError);
+ACC_TRACING_EXCEPTION(InvalidArgument);
+ACC_TRACING_EXCEPTION(LengthError);
+ACC_TRACING_EXCEPTION(OutOfRange);
+ACC_TRACING_EXCEPTION(TypeError);
+
+// runtime error
+ACC_TRACING_EXCEPTION(RuntimeError);
+ACC_TRACING_EXCEPTION(RangeError);
+ACC_TRACING_EXCEPTION(OverflowError);
+ACC_TRACING_EXCEPTION(UnderflowError);
+ACC_TRACING_EXCEPTION(NotImplementedError);
+
 #define ACC_THROW(E, ...) \
   throw E(#E, " @(", __FILE__, ":", __LINE__, "): \"", ##__VA_ARGS__, "\"")
 
