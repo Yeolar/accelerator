@@ -175,73 +175,73 @@
 /**
  * APPLYFn variadic F-Macro.
  */
-#define ACC_APPLYF1(F,a) \
-  F(a)
-#define ACC_APPLYF2(F,a,b) \
-  F(a) F(b)
-#define ACC_APPLYF3(F,a,b,c) \
-  F(a) F(b) F(c)
-#define ACC_APPLYF4(F,a,b,c,d) \
-  F(a) F(b) F(c) F(d)
-#define ACC_APPLYF5(F,a,b,c,d,e) \
-  F(a) F(b) F(c) F(d) F(e)
-#define ACC_APPLYF6(F,a,b,c,d,e,f) \
-  F(a) F(b) F(c) F(d) F(e) F(f)
-#define ACC_APPLYF7(F,a,b,c,d,e,f,g) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g)
-#define ACC_APPLYF8(F,a,b,c,d,e,f,g,h) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h)
-#define ACC_APPLYF9(F,a,b,c,d,e,f,g,h,i) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i)
-#define ACC_APPLYF10(F,a,b,c,d,e,f,g,h,i,j) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j)
-#define ACC_APPLYF11(F,a,b,c,d,e,f,g,h,i,j,k) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k)
-#define ACC_APPLYF12(F,a,b,c,d,e,f,g,h,i,j,k,l) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l)
-#define ACC_APPLYF13(F,a,b,c,d,e,f,g,h,i,j,k,l,m) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m)
-#define ACC_APPLYF14(F,a,b,c,d,e,f,g,h,i,j,k,l,m,n) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m) F(n)
-#define ACC_APPLYF15(F,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m) F(n) F(o)
-#define ACC_APPLYF16(F,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m) F(n) F(o) \
-  F(p)
-#define ACC_APPLYF17(F,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m) F(n) F(o) \
-  F(p) F(q)
-#define ACC_APPLYF18(F,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m) F(n) F(o) \
-  F(p) F(q) F(r)
-#define ACC_APPLYF19(F,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m) F(n) F(o) \
-  F(p) F(q) F(r) F(s)
-#define ACC_APPLYF20(F,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m) F(n) F(o) \
-  F(p) F(q) F(r) F(s) F(t)
-#define ACC_APPLYF21(F,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m) F(n) F(o) \
-  F(p) F(q) F(r) F(s) F(t) F(u)
-#define ACC_APPLYF22(F,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m) F(n) F(o) \
-  F(p) F(q) F(r) F(s) F(t) F(u) F(v)
-#define ACC_APPLYF23(F,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m) F(n) F(o) \
-  F(p) F(q) F(r) F(s) F(t) F(u) F(v) F(w)
-#define ACC_APPLYF24(F,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m) F(n) F(o) \
-  F(p) F(q) F(r) F(s) F(t) F(u) F(v) F(w) F(x)
-#define ACC_APPLYF25(F,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m) F(n) F(o) \
-  F(p) F(q) F(r) F(s) F(t) F(u) F(v) F(w) F(x) F(y)
-#define ACC_APPLYF26(F,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z) \
-  F(a) F(b) F(c) F(d) F(e) F(f) F(g) F(h) F(i) F(j) F(k) F(l) F(m) F(n) F(o) \
-  F(p) F(q) F(r) F(s) F(t) F(u) F(v) F(w) F(x) F(y) F(z)
+#define ACC_APPLYF1(x,A) \
+  A(x)
+#define ACC_APPLYF2(x,A,B) \
+  A(x) B(x)
+#define ACC_APPLYF3(x,A,B,C) \
+  A(x) B(x) C(x)
+#define ACC_APPLYF4(x,A,B,C,D) \
+  A(x) B(x) C(x) D(x)
+#define ACC_APPLYF5(x,A,B,C,D,E) \
+  A(x) B(x) C(x) D(x) E(x)
+#define ACC_APPLYF6(x,A,B,C,D,E,F) \
+  A(x) B(x) C(x) D(x) E(x) F(x)
+#define ACC_APPLYF7(x,A,B,C,D,E,F,G) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x)
+#define ACC_APPLYF8(x,A,B,C,D,E,F,G,H) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x)
+#define ACC_APPLYF9(x,A,B,C,D,E,F,G,H,I) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x)
+#define ACC_APPLYF10(x,A,B,C,D,E,F,G,H,I,J) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x)
+#define ACC_APPLYF11(x,A,B,C,D,E,F,G,H,I,J,K) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x)
+#define ACC_APPLYF12(x,A,B,C,D,E,F,G,H,I,J,K,L) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x)
+#define ACC_APPLYF13(x,A,B,C,D,E,F,G,H,I,J,K,L,M) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x)
+#define ACC_APPLYF14(x,A,B,C,D,E,F,G,H,I,J,K,L,M,N) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x) N(x)
+#define ACC_APPLYF15(x,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x) N(x) O(x)
+#define ACC_APPLYF16(x,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x) N(x) O(x) \
+  P(x)
+#define ACC_APPLYF17(x,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x) N(x) O(x) \
+  P(x) Q(x)
+#define ACC_APPLYF18(x,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x) N(x) O(x) \
+  P(x) Q(x) R(x)
+#define ACC_APPLYF19(x,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x) N(x) O(x) \
+  P(x) Q(x) R(x) S(x)
+#define ACC_APPLYF20(x,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x) N(x) O(x) \
+  P(x) Q(x) R(x) S(x) T(x)
+#define ACC_APPLYF21(x,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x) N(x) O(x) \
+  P(x) Q(x) R(x) S(x) T(x) U(x)
+#define ACC_APPLYF22(x,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x) N(x) O(x) \
+  P(x) Q(x) R(x) S(x) T(x) U(x) V(x)
+#define ACC_APPLYF23(x,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x) N(x) O(x) \
+  P(x) Q(x) R(x) S(x) T(x) U(x) V(x) W(x)
+#define ACC_APPLYF24(x,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x) N(x) O(x) \
+  P(x) Q(x) R(x) S(x) T(x) U(x) V(x) W(x) X(x)
+#define ACC_APPLYF25(x,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x) N(x) O(x) \
+  P(x) Q(x) R(x) S(x) T(x) U(x) V(x) W(x) X(x) Y(x)
+#define ACC_APPLYF26(x,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z) \
+  A(x) B(x) C(x) D(x) E(x) F(x) G(x) H(x) I(x) J(x) K(x) L(x) M(x) N(x) O(x) \
+  P(x) Q(x) R(x) S(x) T(x) U(x) V(x) W(x) X(x) Y(x) Z(x)
 #define ACC_APPLYF_(M, ...) M(__VA_ARGS__)
-#define ACC_APPLYFn(F, ...) \
+#define ACC_APPLYFn(x, ...) \
   ACC_APPLYF_(ACC_CONCATENATE(ACC_APPLYF, ACC_NARG(__VA_ARGS__)), \
-              F, __VA_ARGS__)
+              x, __VA_ARGS__)
 
 //////////////////////////////////////////////////////////////////////
 
