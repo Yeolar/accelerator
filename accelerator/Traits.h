@@ -129,3 +129,35 @@ BOOST_MPL_HAS_XXX_TRAIT_DEF(size_type);
   ACC_CREATE_HAS_MEMBER_FN_TRAITS_IMPL( \
       classname, func_name, /* nolint */ volatile const)
 
+namespace acc {
+
+/**
+ * decltype of function parameter and result.
+ * https://stackoverflow.com/questions/43526647/decltype-of-function-parameter
+ */
+
+template <std::size_t N, typename T0, typename... Ts>
+struct TypeN {
+  using type = typename TypeN<N - 1U, Ts...>::type;
+};
+template <typename T0, typename... Ts>
+struct TypeN<0U, T0, Ts...> {
+  using type = T0;
+};
+
+template <std::size_t, typename>
+struct ArgType;
+template <std::size_t N, typename R, typename... As>
+struct ArgType<N, R(As...)> {
+  using type = typename TypeN<N, As...>::type;
+};
+
+// or use: std::result_of
+template <typename>
+struct ReturnType;
+template <typename R, typename... As>
+struct ReturnType<R(As...)> {
+  using type = R;
+};
+
+} // namespace acc
