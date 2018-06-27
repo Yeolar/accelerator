@@ -17,24 +17,24 @@
 #include "accelerator/stats/Monitor.h"
 
 #include "accelerator/Algorithm.h"
-#include "accelerator/Logging.h"
-#include "accelerator/MapUtil.h"
 #include "accelerator/Time.h"
-#include "accelerator/thread/ThreadUtil.h"
 
 namespace acc {
 
-MonitorValue::MonitorValue(Type type) : type_(type) {
+void MonitorValue::init(Type type) {
+  type_ = type;
   reset();
 }
 
 void MonitorValue::reset() {
+  RWSpinLock::WriteHolder w{&lock_};
   isset_ = type_ & (CNT | SUM);
   count_ = 0;
   value_ = 0;
 }
 
 void MonitorValue::add(int64_t value) {
+  RWSpinLock::WriteHolder w{&lock_};
   isset_ = true;
   count_++;
   switch (type_) {
@@ -47,6 +47,7 @@ void MonitorValue::add(int64_t value) {
 }
 
 int64_t MonitorValue::value() const {
+  RWSpinLock::ReadHolder r{&lock_};
   switch (type_) {
     case CNT: return count_;
     case AVG: return count_ != 0 ? value_ / count_ : 0;
@@ -54,61 +55,6 @@ int64_t MonitorValue::value() const {
     case MAX:
     case SUM: return value_;
     default: return 0;
-  }
-}
-
-void Monitor::start() {
-  handle_ = std::thread(&Monitor::run, this);
-  handle_.detach();
-}
-
-void Monitor::run() {
-  setCurrentThreadName("MonitorThread");
-  open_ = true;
-  CycleTimer timer(60000000); // 60s
-  while (open_) {
-    if (timer.isExpired()) {
-      MonMap data;
-      dump(data);
-      if (sender_) {
-        sender_->send(data);
-      }
-    }
-    sleep(1);
-  }
-}
-
-void Monitor::addToMonitor(const std::string& name,
-                           MonitorValue::Type type,
-                           int64_t value) {
-  if (!open_) {
-    return;
-  }
-  auto key = prefix_.empty() ? name : prefix_ + '.' + name;
-  std::lock_guard<std::mutex> guard(lock_);
-  if (!containKey(mvalues_, key)) {
-    mvalues_.emplace(key, MonitorValue(type));
-  }
-  auto mvalue = get_ptr(mvalues_, key);
-  if (mvalue->type() != type) {
-    ACCLOG(ERROR) << "not same type monitor";
-  }
-  else {
-    mvalue->add(value);
-  }
-}
-
-void Monitor::dump(MonMap& data) {
-  std::unordered_map<std::string, MonitorValue> mvalues;
-  {
-    std::lock_guard<std::mutex> guard(lock_);
-    mvalues.swap(mvalues_);
-  }
-  for (auto& kv : mvalues) {
-    if (kv.second.isSet()) {
-      data[kv.first] = kv.second.value();
-      kv.second.reset();
-    }
   }
 }
 

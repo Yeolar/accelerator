@@ -18,7 +18,7 @@
 
 #include "accelerator/Logging.h"
 #include "accelerator/ScopeGuard.h"
-#include "accelerator/stats/Monitor.h"
+#include "accelerator/event/EventMonitorKey.h"
 
 namespace acc {
 
@@ -106,13 +106,13 @@ void EventLoop::loopBody(bool once) {
           }
         }
       }
-      ACCMON_AVG("loopevent", n);
-      ACCMON_MAX("loopevent.max", n);
+      ACCMON_VAL(EventMonitorKey, kLoopEvent, n);
+      ACCMON_VAL(EventMonitorKey, kLoopEventMax, n);
     }
 
     uint64_t cost = timePassed(t0) / 1000;
-    ACCMON_AVG("loopcost", cost);
-    ACCMON_MAX("loopcost.max", cost);
+    ACCMON_VAL(EventMonitorKey, kLoopCost, cost);
+    ACCMON_VAL(EventMonitorKey, kLoopCostMax, cost);
 
     if (once) {
       break;
