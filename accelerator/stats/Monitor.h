@@ -22,8 +22,10 @@
 #include <thread>
 #include <unordered_map>
 
+#include "accelerator/accelerator-config.h"
 #include "accelerator/Logging.h"
 #include "accelerator/Singleton.h"
+#include "accelerator/Time.h"
 #include "accelerator/thread/RWSpinLock.h"
 #include "accelerator/thread/ThreadUtil.h"
 
@@ -67,58 +69,51 @@ class MonitorValue {
   mutable RWSpinLock lock_;
 };
 
-template <class T>
-class Monitor {
+class MonitorBase {
  public:
-  typedef std::unordered_map<std::string, int> MonMap;
+  typedef std::unordered_map<std::string, int> Data;
 
+  MonitorBase() {}
+  virtual ~MonitorBase() {}
+
+  void start();
+  void stop();
+
+  void setPrefix(const std::string& prefix);
+  void setSender(std::function<void(const Data&)>&& sender);
+  void setDumpInterval(uint64_t interval);
+
+  virtual void addToMonitor(int key, int64_t value = 0) = 0;
+
+ protected:
+  virtual void dump(Data& data) = 0;
+
+  void run();
+
+  std::string prefix_;
+  std::function<void(const Data&)> sender_;
+  uint64_t interval_{60000000}; // 60s
+  std::thread handle_;
+  std::atomic<bool> open_{false};
+};
+
+template <class T>
+class Monitor : public MonitorBase {
+ public:
   Monitor() {
     for (int key = 0; key < T::kMax; key++) {
       mvalues_[key].init(T::getType(key));
     }
   }
 
-  void start() {
-    handle_ = std::thread(&Monitor::run, this);
-    handle_.detach();
-  }
-
-  void stop() {
-    open_ = false;
-  }
-
-  void run() {
-    setCurrentThreadName("MonitorThread");
-    open_ = true;
-    CycleTimer timer(60000000); // 60s
-    while (open_) {
-      if (timer.isExpired()) {
-        MonMap data;
-        dump(data);
-        if (sender_) {
-          sender_(data);
-        }
-      }
-      sleep(1);
-    }
-  }
-
-  void setPrefix(const std::string& prefix) {
-    prefix_ = prefix + '.';
-  }
-
-  void setSender(std::function<void(const MonMap&)>&& sender) {
-    sender_ = std::move(sender);
-  }
-
-  void addToMonitor(int key, int64_t value = 0) {
+  void addToMonitor(int key, int64_t value = 0) override {
     if (open_) {
       mvalues_[key].add(value);
     }
   }
 
  private:
-  void dump(MonMap& data) {
+  void dump(Data& data) override {
     int key = 0;
     for (auto& m : mvalues_) {
       if (m.isSet()) {
@@ -129,19 +124,27 @@ class Monitor {
     }
   }
 
-  std::string prefix_;
-  std::function<void(const MonMap&)> sender_;
   std::array<MonitorValue, T::kMax> mvalues_;
-  std::thread handle_;
-  std::atomic<bool> open_{false};
 };
 
 template <class T, class F>
-void setupMonitor(const std::string& prefix, F&& sender) {
+void setupMonitor(const std::string& prefix,
+                  F&& sender,
+                  uint64_t interval = 60000000) {
+#if ACC_MON_ENABLE
   auto mon = Singleton<Monitor<T>>::get();
   mon->setPrefix(prefix);
   mon->setSender(sender);
+  mon->setDumpInterval(interval);
   mon->start();
+#endif
+}
+
+template <class T>
+inline void addToMonitor(int key, int64_t value = 0) {
+#if ACC_MON_ENABLE
+  Singleton<Monitor<T>>::get()->addToMonitor(key, value);
+#endif
 }
 
 } // namespace acc
@@ -170,8 +173,11 @@ struct cls {                                            \
   }                                                     \
 }; //
 
-#define ACCMON(T, key, value) \
-  ::acc::Singleton< ::acc::Monitor<T>>::get()->addToMonitor(T::key, value)
-#define ACCMON_CNT(T, key)        ACCMON(T, key, 0)
-#define ACCMON_VAL(T, key, value) ACCMON(T, key, value)
+#if ACC_MON_ENABLE
+#define ACCMON_ADD(T, key, value) acc::addToMonitor<T>(T::key, value)
+#define ACCMON_CNT(T, key)        acc::addToMonitor<T>(T::key)
+#else
+#define ACCMON_ADD(T, key, value)
+#define ACCMON_CNT(T, key)
+#endif
 

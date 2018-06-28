@@ -12,6 +12,9 @@ set(VERSION_MAJOR 1)
 set(VERSION_MINOR 2)
 set(VERSION_PATCH 4)
 
+# Set options
+option(ACC_MON_ENABLE "Enable monitor" ON)
+
 # Required packages
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package(Threads REQUIRED)
@@ -146,6 +149,7 @@ if(GTEST_FOUND)
     add_subdirectory(accelerator/io/test)
     add_subdirectory(accelerator/scheduler/test)
     add_subdirectory(accelerator/ssl/test)
+    add_subdirectory(accelerator/stats/test)
     add_subdirectory(accelerator/thread/test)
 endif()
 

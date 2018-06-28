@@ -13,3 +13,6 @@
 
 #cmakedefine ACC_GFLAGS_NAMESPACE @ACC_GFLAGS_NAMESPACE@
 #cmakedefine ACC_UNUSUAL_GFLAGS_NAMESPACE 1
+
+/* monitor */
+#cmakedefine ACC_MON_ENABLE 1

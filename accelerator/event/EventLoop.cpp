@@ -106,13 +106,13 @@ void EventLoop::loopBody(bool once) {
           }
         }
       }
-      ACCMON_VAL(EventMonitorKey, kLoopEvent, n);
-      ACCMON_VAL(EventMonitorKey, kLoopEventMax, n);
+      ACCMON_ADD(EventMonitorKey, kLoopEvent, n);
+      ACCMON_ADD(EventMonitorKey, kLoopEventMax, n);
     }
 
     uint64_t cost = timePassed(t0) / 1000;
-    ACCMON_VAL(EventMonitorKey, kLoopCost, cost);
-    ACCMON_VAL(EventMonitorKey, kLoopCostMax, cost);
+    ACCMON_ADD(EventMonitorKey, kLoopCost, cost);
+    ACCMON_ADD(EventMonitorKey, kLoopCostMax, cost);
 
     if (once) {
       break;

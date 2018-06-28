@@ -16,9 +16,6 @@
 
 #include "accelerator/stats/Monitor.h"
 
-#include "accelerator/Algorithm.h"
-#include "accelerator/Time.h"
-
 namespace acc {
 
 void MonitorValue::init(Type type) {
@@ -56,6 +53,45 @@ int64_t MonitorValue::value() const {
     case SUM: return value_;
     default: return 0;
   }
+}
+
+void MonitorBase::start() {
+  handle_ = std::thread(&MonitorBase::run, this);
+  handle_.detach();
+}
+
+void MonitorBase::stop() {
+  open_ = false;
+}
+
+void MonitorBase::run() {
+  setCurrentThreadName("MonitorThread");
+  open_ = true;
+  CycleTimer timer(interval_);
+  while (open_) {
+    if (timer.isExpired()) {
+      Data data;
+      dump(data);
+      if (sender_) {
+        sender_(data);
+      }
+    }
+    sleep(1);
+  }
+}
+
+void MonitorBase::setPrefix(const std::string& prefix) {
+  if (!prefix.empty()) {
+    prefix_ = prefix + '.';
+  }
+}
+
+void MonitorBase::setSender(std::function<void(const Data&)>&& sender) {
+  sender_ = std::move(sender);
+}
+
+void MonitorBase::setDumpInterval(uint64_t interval) {
+  interval_ = interval;
 }
 
 } // namespace acc
