@@ -64,6 +64,10 @@ void MonitorBase::stop() {
   open_ = false;
 }
 
+bool MonitorBase::running() {
+  return open_;
+}
+
 void MonitorBase::run() {
   setCurrentThreadName("MonitorThread");
   open_ = true;

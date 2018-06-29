@@ -71,13 +71,15 @@ class MonitorValue {
 
 class MonitorBase {
  public:
-  typedef std::unordered_map<std::string, int> Data;
+  typedef std::unordered_map<std::string, int64_t> Data;
 
   MonitorBase() {}
   virtual ~MonitorBase() {}
 
   void start();
   void stop();
+
+  bool running();
 
   void setPrefix(const std::string& prefix);
   void setSender(std::function<void(const Data&)>&& sender);
