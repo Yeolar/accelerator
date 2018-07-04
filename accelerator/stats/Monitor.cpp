@@ -18,36 +18,52 @@
 
 namespace acc {
 
+namespace detail {
+
+template <typename T>
+void updateMax(std::atomic<T>& maxValue, const T& value) {
+  T prev = maxValue;
+  while (prev < value && !maxValue.compare_exchange_weak(prev, value));
+}
+
+template <typename T>
+void updateMin(std::atomic<T>& minValue, const T& value) {
+  T prev = minValue;
+  while (prev > value && !minValue.compare_exchange_weak(prev, value));
+}
+
+} // namespace detail
+
 void MonitorValue::init(Type type) {
   type_ = type;
   reset();
 }
 
 void MonitorValue::reset() {
-  RWSpinLock::WriteHolder w{&lock_};
   isset_ = type_ & (CNT | SUM);
   count_ = 0;
   value_ = 0;
 }
 
 void MonitorValue::add(int64_t value) {
-  RWSpinLock::WriteHolder w{&lock_};
   isset_ = true;
-  count_++;
   switch (type_) {
-    case AVG:
+    case CNT:
+    case AVG: count_++;
     case SUM: value_ += value; break;
-    case MIN: value_ = std::min(value_, value); break;
-    case MAX: value_ = std::max(value_, value); break;
+    case MIN: detail::updateMin(value_, value); break;
+    case MAX: detail::updateMax(value_, value); break;
     default: break;
   }
 }
 
 int64_t MonitorValue::value() const {
-  RWSpinLock::ReadHolder r{&lock_};
   switch (type_) {
     case CNT: return count_;
-    case AVG: return count_ != 0 ? value_ / count_ : 0;
+    case AVG: {
+      int32_t n = count_;
+      return n != 0 ? value_ / n : 0;
+    }
     case MIN:
     case MAX:
     case SUM: return value_;

@@ -24,11 +24,11 @@ using namespace acc;
 // ============================================================================
 // MonitorBenchmark.cpp                            relative  time/iter  iters/s
 // ============================================================================
-// addToMonitor_cnt                                             1.29ns  775.95M
-// addToMonitor_min                                             1.30ns  769.61M
-// addToMonitor_max                                             1.29ns  776.02M
-// addToMonitor_avg                                             1.29ns  775.98M
-// addToMonitor_sum                                             1.29ns  775.86M
+// addToMonitor_cnt                                             1.29ns  775.89M
+// addToMonitor_min                                             1.30ns  769.71M
+// addToMonitor_max                                             1.36ns  735.51M
+// addToMonitor_avg                                             1.29ns  776.01M
+// addToMonitor_sum                                             1.36ns  735.49M
 // ============================================================================
 
 BENCHMARK(addToMonitor_cnt, n) {

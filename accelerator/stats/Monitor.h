@@ -26,7 +26,6 @@
 #include "accelerator/Logging.h"
 #include "accelerator/Singleton.h"
 #include "accelerator/Time.h"
-#include "accelerator/thread/RWSpinLock.h"
 #include "accelerator/thread/ThreadUtil.h"
 
 namespace acc {
@@ -49,11 +48,9 @@ class MonitorValue {
   void reset();
 
   Type type() const {
-    RWSpinLock::ReadHolder r{&lock_};
     return type_;
   }
   bool isSet() const {
-    RWSpinLock::ReadHolder r{&lock_};
     return isset_;
   }
 
@@ -63,10 +60,9 @@ class MonitorValue {
 
  private:
   Type type_;
-  bool isset_;
-  int32_t count_;
-  int64_t value_;
-  mutable RWSpinLock lock_;
+  std::atomic<bool> isset_;
+  std::atomic<int32_t> count_;
+  std::atomic<int64_t> value_;
 };
 
 class MonitorBase {
