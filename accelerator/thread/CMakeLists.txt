@@ -1,4 +1,4 @@
-# Copyright 2017 Yeolar
+# Copyright 2017-present Yeolar
 
 file(GLOB ACCELERATOR_THREAD_SRCS *.cpp)
 file(GLOB ACCELERATOR_THREAD_HDRS *.h)

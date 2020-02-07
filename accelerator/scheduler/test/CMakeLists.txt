@@ -1,4 +1,4 @@
-# Copyright 2017 Yeolar
+# Copyright 2017-present Yeolar
 
 set(ACCELERATOR_SCHEDULER_TEST_SRCS
     DAGTest.cpp
