@@ -111,7 +111,7 @@ remove(Container& container, const typename Container::value_type& value) {
 
 template <class Container>
 typename std::enable_if<has_iterator<Container>::value>::type
-subrange(Container& container, size_t begin, size_t end) {
+subRange(Container& container, size_t begin, size_t end) {
   size_t b = std::min(begin, container.size());
   size_t e = std::min(end, container.size());
   container.erase(container.begin() + e, container.end());

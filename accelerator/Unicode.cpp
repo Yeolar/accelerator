@@ -64,13 +64,16 @@ char32_t utf8ToCodePoint(
    * 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
    */
 
-  auto skip = [&] { ++p; return U'\ufffd'; };
+  const auto skip = [&] {
+    ++p;
+    return U'\ufffd';
+  };
 
   if (p >= e) {
     if (skipOnError) {
       return skip();
     }
-    throw std::runtime_error("folly::utf8ToCodePoint empty/invalid string");
+    throw std::runtime_error("acc::utf8ToCodePoint empty/invalid string");
   }
 
   unsigned char fst = *p;
@@ -93,20 +96,20 @@ char32_t utf8ToCodePoint(
     if (skipOnError) {
       return skip();
     }
-    throw std::runtime_error(to<std::string>("folly::utf8ToCodePoint i=0 d=", d));
+    throw std::runtime_error(to<std::string>("acc::utf8ToCodePoint i=0 d=", d));
   }
 
   fst <<= 1;
 
   for (unsigned int i = 1; i != 3 && p + i < e; ++i) {
-    unsigned char tmp = p[i];
+    const unsigned char tmp = p[i];
 
     if ((tmp & 0xC0) != 0x80) {
       if (skipOnError) {
         return skip();
       }
       throw std::runtime_error(
-        to<std::string>("folly::utf8ToCodePoint i=", i, " tmp=", (uint32_t)tmp));
+        to<std::string>("acc::utf8ToCodePoint i=", i, " tmp=", (uint32_t)tmp));
     }
 
     d = (d << 6) | (tmp & 0x3F);
@@ -121,7 +124,7 @@ char32_t utf8ToCodePoint(
           return skip();
         }
         throw std::runtime_error(
-          to<std::string>("folly::utf8ToCodePoint i=", i, " d=", d));
+          to<std::string>("acc::utf8ToCodePoint i=", i, " d=", d));
       }
 
       // check for surrogates only needed for 3 bytes
@@ -131,7 +134,7 @@ char32_t utf8ToCodePoint(
             return skip();
           }
           throw std::runtime_error(
-            to<std::string>("folly::utf8ToCodePoint i=", i, " d=", d));
+            to<std::string>("acc::utf8ToCodePoint i=", i, " d=", d));
         }
       }
 
@@ -143,7 +146,7 @@ char32_t utf8ToCodePoint(
   if (skipOnError) {
     return skip();
   }
-  throw std::runtime_error("folly::utf8ToCodePoint encoding length maxed out");
+  throw std::runtime_error("acc::utf8ToCodePoint encoding length maxed out");
 }
 
 //////////////////////////////////////////////////////////////////////

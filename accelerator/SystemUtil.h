@@ -1,5 +1,4 @@
 /*
- * Copyright 2017 Facebook, Inc.
  * Copyright 2017 Yeolar
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,30 +15,37 @@
  */
 
 #pragma once
-#define ACC_GEN_COMBINE_H
 
-#include "accelerator/gen/Base.h"
+#include <unistd.h>
 
 namespace acc {
-namespace gen {
-namespace detail {
 
-template<class Container>
-class Interleave;
-
-template<class Container>
-class Zip;
-
-}  // namespace detail
-
-template<class Source2,
-         class Source2Decayed = typename std::decay<Source2>::type,
-         class Interleave = detail::Interleave<Source2Decayed>>
-Interleave interleave(Source2&& source2) {
-  return Interleave(std::forward<Source2>(source2));
+inline int getCpuNum() {
+  return sysconf(_SC_NPROCESSORS_CONF);
 }
 
-}  // namespace gen
-}  // namespace acc
+bool setCpuAffinity(int cpu, pid_t pid = 0);
+int getCpuAffinity(pid_t pid = 0);
 
-#include "accelerator/gen/Combine-inl.h"
+struct FsInfo {
+  size_t freeBlocks;
+  size_t availableBlocks;
+};
+
+FsInfo getFsInfo(const char* path);
+
+struct SystemMemory {
+  size_t total;
+  size_t free;
+};
+
+SystemMemory getSystemMemory();
+
+struct ProcessMemory {
+  size_t total;
+  size_t rss;
+};
+
+ProcessMemory getProcessMemory();
+
+} // namespace acc

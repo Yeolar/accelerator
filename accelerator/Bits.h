@@ -46,201 +46,176 @@
 #pragma once
 
 #include <cinttypes>
-#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <limits>
-#include <type_traits>
+
+#include "accelerator/ConstexprMath.h"
+#include "accelerator/Traits.h"
 
 namespace acc {
 
-// Generate overloads for findFirstSet as wrappers around
-// appropriate ffs, ffsl, ffsll gcc builtins
-template <class T>
-inline constexpr
-typename std::enable_if<
-  (std::is_integral<T>::value &&
-   std::is_unsigned<T>::value &&
-   sizeof(T) <= sizeof(unsigned int)),
-  unsigned int>::type
-  findFirstSet(T x) {
-  return static_cast<unsigned int>(__builtin_ffs(static_cast<int>(x)));
+namespace detail {
+template <typename Dst, typename Src>
+constexpr std::make_signed_t<Dst> bits_to_signed(Src const s) {
+  static_assert(std::is_signed<Dst>::value, "unsigned type");
+  return to_signed(static_cast<std::make_unsigned_t<Dst>>(to_unsigned(s)));
+}
+template <typename Dst, typename Src>
+constexpr std::make_unsigned_t<Dst> bits_to_unsigned(Src const s) {
+  static_assert(std::is_unsigned<Dst>::value, "signed type");
+  return static_cast<Dst>(to_unsigned(s));
+}
+} // namespace detail
+
+/// findFirstSet
+///
+/// Return the 1-based index of the least significant bit which is set.
+/// For x > 0, the exponent in the largest power of two which does not divide x.
+template <typename T>
+inline constexpr unsigned int findFirstSet(T const v) {
+  using S0 = int;
+  using S1 = long int;
+  using S2 = long long int;
+  using detail::bits_to_signed;
+  static_assert(sizeof(T) <= sizeof(S2), "over-sized type");
+  static_assert(std::is_integral<T>::value, "non-integral type");
+  static_assert(!std::is_same<T, bool>::value, "bool type");
+
+  // clang-format off
+  return static_cast<unsigned int>(
+      sizeof(T) <= sizeof(S0) ? __builtin_ffs(bits_to_signed<S0>(v)) :
+      sizeof(T) <= sizeof(S1) ? __builtin_ffsl(bits_to_signed<S1>(v)) :
+      sizeof(T) <= sizeof(S2) ? __builtin_ffsll(bits_to_signed<S2>(v)) :
+      0);
+  // clang-format on
+}
+
+/// findLastSet
+///
+/// Return the 1-based index of the most significant bit which is set.
+/// For x > 0, findLastSet(x) == 1 + floor(log2(x)).
+template <typename T>
+inline constexpr unsigned int findLastSet(T const v) {
+  using U0 = unsigned int;
+  using U1 = unsigned long int;
+  using U2 = unsigned long long int;
+  using detail::bits_to_unsigned;
+  static_assert(sizeof(T) <= sizeof(U2), "over-sized type");
+  static_assert(std::is_integral<T>::value, "non-integral type");
+  static_assert(!std::is_same<T, bool>::value, "bool type");
+
+  // If X is a power of two X - Y = 1 + ((X - 1) ^ Y). Doing this transformation
+  // allows GCC to remove its own xor that it adds to implement clz using bsr.
+  // clang-format off
+  using size = index_constant<constexpr_max(sizeof(T), sizeof(U0))>;
+  return v ? 1u + static_cast<unsigned int>((8u * size{} - 1u) ^ (
+      sizeof(T) <= sizeof(U0) ? __builtin_clz(bits_to_unsigned<U0>(v)) :
+      sizeof(T) <= sizeof(U1) ? __builtin_clzl(bits_to_unsigned<U1>(v)) :
+      sizeof(T) <= sizeof(U2) ? __builtin_clzll(bits_to_unsigned<U2>(v)) :
+      0)) : 0u;
+  // clang-format on
+}
+
+/// popcount
+///
+/// Returns the number of bits which are set.
+template <typename T>
+inline constexpr unsigned int popcount(T const v) {
+  using U0 = unsigned int;
+  using U1 = unsigned long int;
+  using U2 = unsigned long long int;
+  using detail::bits_to_unsigned;
+  static_assert(sizeof(T) <= sizeof(U2), "over-sized type");
+  static_assert(std::is_integral<T>::value, "non-integral type");
+  static_assert(!std::is_same<T, bool>::value, "bool type");
+
+  // clang-format off
+  return static_cast<unsigned int>(
+      sizeof(T) <= sizeof(U0) ? __builtin_popcount(bits_to_unsigned<U0>(v)) :
+      sizeof(T) <= sizeof(U1) ? __builtin_popcountl(bits_to_unsigned<U1>(v)) :
+      sizeof(T) <= sizeof(U2) ? __builtin_popcountll(bits_to_unsigned<U2>(v)) :
+      0);
+  // clang-format on
 }
 
 template <class T>
-inline constexpr
-typename std::enable_if<
-  (std::is_integral<T>::value &&
-   std::is_unsigned<T>::value &&
-   sizeof(T) > sizeof(unsigned int) &&
-   sizeof(T) <= sizeof(unsigned long)),
-  unsigned int>::type
-  findFirstSet(T x) {
-  return static_cast<unsigned int>(__builtin_ffsl(static_cast<long>(x)));
+inline constexpr T nextPowTwo(T const v) {
+  static_assert(std::is_unsigned<T>::value, "signed type");
+  return v ? (T(1) << findLastSet(v - 1)) : T(1);
 }
 
 template <class T>
-inline constexpr
-typename std::enable_if<
-  (std::is_integral<T>::value &&
-   std::is_unsigned<T>::value &&
-   sizeof(T) > sizeof(unsigned long) &&
-   sizeof(T) <= sizeof(unsigned long long)),
-  unsigned int>::type
-  findFirstSet(T x) {
-  return static_cast<unsigned int>(__builtin_ffsll(static_cast<long long>(x)));
+inline constexpr T prevPowTwo(T const v) {
+  static_assert(std::is_unsigned<T>::value, "signed type");
+  return v ? (T(1) << (findLastSet(v) - 1)) : T(0);
 }
 
 template <class T>
-inline constexpr
-typename std::enable_if<
-  (std::is_integral<T>::value && std::is_signed<T>::value),
-  unsigned int>::type
-  findFirstSet(T x) {
-  // Note that conversion from a signed type to the corresponding unsigned
-  // type is technically implementation-defined, but will likely work
-  // on any impementation that uses two's complement.
-  return findFirstSet(static_cast<typename std::make_unsigned<T>::type>(x));
-}
-
-// findLastSet: return the 1-based index of the highest bit set
-// for x > 0, findLastSet(x) == 1 + floor(log2(x))
-template <class T>
-inline constexpr
-typename std::enable_if<
-  (std::is_integral<T>::value &&
-   std::is_unsigned<T>::value &&
-   sizeof(T) <= sizeof(unsigned int)),
-  unsigned int>::type
-  findLastSet(T x) {
-  // If X is a power of two X - Y = ((X - 1) ^ Y) + 1. Doing this transformation
-  // allows GCC to remove its own xor that it adds to implement clz using bsr
-  return x ? ((8 * sizeof(unsigned int) - 1) ^ __builtin_clz(x)) + 1 : 0;
-}
-
-template <class T>
-inline constexpr
-typename std::enable_if<
-  (std::is_integral<T>::value &&
-   std::is_unsigned<T>::value &&
-   sizeof(T) > sizeof(unsigned int) &&
-   sizeof(T) <= sizeof(unsigned long)),
-  unsigned int>::type
-  findLastSet(T x) {
-  return x ? ((8 * sizeof(unsigned long) - 1) ^ __builtin_clzl(x)) + 1 : 0;
-}
-
-template <class T>
-inline constexpr
-typename std::enable_if<
-  (std::is_integral<T>::value &&
-   std::is_unsigned<T>::value &&
-   sizeof(T) > sizeof(unsigned long) &&
-   sizeof(T) <= sizeof(unsigned long long)),
-  unsigned int>::type
-  findLastSet(T x) {
-  return x ? ((8 * sizeof(unsigned long long) - 1) ^ __builtin_clzll(x)) + 1
-           : 0;
-}
-
-template <class T>
-inline constexpr
-typename std::enable_if<
-  (std::is_integral<T>::value &&
-   std::is_signed<T>::value),
-  unsigned int>::type
-  findLastSet(T x) {
-  return findLastSet(static_cast<typename std::make_unsigned<T>::type>(x));
-}
-
-template <class T>
-inline constexpr
-typename std::enable_if<
-  std::is_integral<T>::value && std::is_unsigned<T>::value,
-  T>::type
-nextPowTwo(T v) {
-  return v ? (T(1) << findLastSet(v - 1)) : 1;
-}
-
-template <class T>
-inline constexpr
-typename std::enable_if<
-  std::is_integral<T>::value && std::is_unsigned<T>::value,
-  bool>::type
-isPowTwo(T v) {
+inline constexpr bool isPowTwo(T const v) {
+  static_assert(std::is_integral<T>::value, "non-integral type");
+  static_assert(std::is_unsigned<T>::value, "signed type");
+  static_assert(!std::is_same<T, bool>::value, "bool type");
   return (v != 0) && !(v & (v - 1));
 }
 
-/**
- * Population count
- */
-template <class T>
-inline typename std::enable_if<
-  (std::is_integral<T>::value &&
-   std::is_unsigned<T>::value &&
-   sizeof(T) <= sizeof(unsigned int)),
-  size_t>::type
-  popcount(T x) {
-  return size_t(__builtin_popcount(x));
-}
-
-template <class T>
-inline typename std::enable_if<
-  (std::is_integral<T>::value &&
-   std::is_unsigned<T>::value &&
-   sizeof(T) > sizeof(unsigned int) &&
-   sizeof(T) <= sizeof(unsigned long long)),
-  size_t>::type
-  popcount(T x) {
-  return size_t(__builtin_popcountll(x));
-}
+constexpr auto kIsLittleEndian = __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__;
+constexpr auto kIsBigEndian = !kIsLittleEndian;
 
 /**
  * Endianness detection and manipulation primitives.
  */
 namespace detail {
 
-template <class T>
-struct EndianIntBase {
- public:
-  static T swap(T x);
-};
+template <size_t Size>
+struct uint_types_by_size;
 
-#define ACC_GEN(t, fn) \
-template<> inline t EndianIntBase<t>::swap(t x) { return fn(x); }
+#define ACC_GEN(sz, fn)                                      \
+  static inline uint##sz##_t byteswap_gen(uint##sz##_t v) { \
+    return fn(v);                                           \
+  }                                                         \
+  template <>                                               \
+  struct uint_types_by_size<sz / 8> {                       \
+    using type = uint##sz##_t;                              \
+  };
 
-// fn(x) expands to (x) if the second argument is empty, which is exactly
-// what we want for [u]int8_t.
-ACC_GEN( int8_t,)
-ACC_GEN(uint8_t,)
-ACC_GEN( int64_t, __builtin_bswap64)
-ACC_GEN(uint64_t, __builtin_bswap64)
-ACC_GEN( int32_t, __builtin_bswap32)
-ACC_GEN(uint32_t, __builtin_bswap32)
-ACC_GEN( int16_t, __builtin_bswap16)
-ACC_GEN(uint16_t, __builtin_bswap16)
+ACC_GEN(8, uint8_t)
+#ifdef _MSC_VER
+ACC_GEN(64, _byteswap_uint64)
+ACC_GEN(32, _byteswap_ulong)
+ACC_GEN(16, _byteswap_ushort)
+#else
+ACC_GEN(64, __builtin_bswap64)
+ACC_GEN(32, __builtin_bswap32)
+ACC_GEN(16, __builtin_bswap16)
+#endif
 
 #undef ACC_GEN
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-
 template <class T>
-struct EndianInt : public detail::EndianIntBase<T> {
- public:
-  static T big(T x) { return EndianInt::swap(x); }
-  static T little(T x) { return x; }
+struct EndianInt {
+  static_assert(
+      (std::is_integral<T>::value && !std::is_same<T, bool>::value) ||
+          std::is_floating_point<T>::value,
+      "template type parameter must be non-bool integral or floating point");
+  static T swap(T x) {
+    // we implement this with memcpy because that is defined behavior in C++
+    // we rely on compilers to optimize away the memcpy calls
+    constexpr auto s = sizeof(T);
+    using B = typename uint_types_by_size<s>::type;
+    B b;
+    std::memcpy(&b, &x, s);
+    b = byteswap_gen(b);
+    std::memcpy(&x, &b, s);
+    return x;
+  }
+  static T big(T x) {
+    return kIsLittleEndian ? EndianInt::swap(x) : x;
+  }
+  static T little(T x) {
+    return kIsBigEndian ? EndianInt::swap(x) : x;
+  }
 };
-
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-
-template <class T>
-struct EndianInt : public detail::EndianIntBase<T> {
- public:
-  static T big(T x) { return x; }
-  static T little(T x) { return EndianInt::swap(x); }
-};
-
-#else
-# error Your machine uses a weird endianness!
-#endif  /* __BYTE_ORDER__ */
 
 } // namespace detail
 
@@ -269,14 +244,7 @@ class Endian {
     BIG
   };
 
-  static constexpr Order order =
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    Order::LITTLE;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    Order::BIG;
-#else
-# error Your machine uses a weird endianness!
-#endif  /* __BYTE_ORDER__ */
+  static constexpr Order order = kIsLittleEndian ? Order::LITTLE : Order::BIG;
 
   template <class T> static T swap(T x) {
     return detail::EndianInt<T>::swap(x);

@@ -28,54 +28,61 @@
 
 namespace acc {
 
-void uuidPack(const struct uuid *uu, uuid_t ptr) {
+struct uuid {
+  uint32_t time_low;
+  uint16_t time_mid;
+  uint16_t time_hi_and_version;
+  uint16_t clock_seq;
+  uint8_t node[6];
+};
+
+void uuidPack(const struct uuid* uu, Uuid::value_type& out) {
   uint32_t tmp;
-  unsigned char *out = ptr;
 
   tmp = uu->time_low;
-  out[3] = (unsigned char)tmp; tmp >>= 8;
-  out[2] = (unsigned char)tmp; tmp >>= 8;
-  out[1] = (unsigned char)tmp; tmp >>= 8;
-  out[0] = (unsigned char)tmp;
+  out[3] = tmp; tmp >>= 8;
+  out[2] = tmp; tmp >>= 8;
+  out[1] = tmp; tmp >>= 8;
+  out[0] = tmp;
 
   tmp = uu->time_mid;
-  out[5] = (unsigned char)tmp; tmp >>= 8;
-  out[4] = (unsigned char)tmp;
+  out[5] = tmp; tmp >>= 8;
+  out[4] = tmp;
 
   tmp = uu->time_hi_and_version;
-  out[7] = (unsigned char)tmp; tmp >>= 8;
-  out[6] = (unsigned char)tmp;
+  out[7] = tmp; tmp >>= 8;
+  out[6] = tmp;
 
   tmp = uu->clock_seq;
-  out[9] = (unsigned char)tmp; tmp >>= 8;
-  out[8] = (unsigned char)tmp;
+  out[9] = tmp; tmp >>= 8;
+  out[8] = tmp;
 
-  memcpy(out + 10, uu->node, 6);
+  memcpy(out.data() + 10, uu->node, 6);
 }
 
-void uuidUnpack(const uuid_t in, struct uuid *uu) {
-  const uint8_t *ptr = in;
+void uuidUnpack(const Uuid::value_type& in, struct uuid* uu) {
+  int i = 0;
   uint32_t tmp;
 
-  tmp = *ptr++;
-  tmp = (tmp << 8) | *ptr++;
-  tmp = (tmp << 8) | *ptr++;
-  tmp = (tmp << 8) | *ptr++;
+  tmp = in[i++];
+  tmp = (tmp << 8) | in[i++];
+  tmp = (tmp << 8) | in[i++];
+  tmp = (tmp << 8) | in[i++];
   uu->time_low = tmp;
 
-  tmp = *ptr++;
-  tmp = (tmp << 8) | *ptr++;
+  tmp = in[i++];
+  tmp = (tmp << 8) | in[i++];
   uu->time_mid = tmp;
 
-  tmp = *ptr++;
-  tmp = (tmp << 8) | *ptr++;
+  tmp = in[i++];
+  tmp = (tmp << 8) | in[i++];
   uu->time_hi_and_version = tmp;
 
-  tmp = *ptr++;
-  tmp = (tmp << 8) | *ptr++;
+  tmp = in[i++];
+  tmp = (tmp << 8) | in[i++];
   uu->clock_seq = tmp;
 
-  memcpy(uu->node, ptr, 6);
+  memcpy(uu->node, in.data() + i, 6);
 }
 
 /*
@@ -237,13 +244,12 @@ int uuidGenerateTime(uuid_t out) {
   return internalUuidGenerateTime(out, 0);
 }
 
-std::string uuidGenerateTime() {
+std::string Uuid::generateTime() {
   std::string out;
 
-  uuid_t uu;
-  uuidGenerateTime(uu);
+  uuidGenerateTime(uuid_);
 
-  StringPiece sp((char*)uu, sizeof(uuid_t));
+  StringPiece sp((char*)uuid_.data(), uuid_.size());
   hexlify(sp.subpiece(0, 4), out, true); sp.advance(4), out += '-';
   hexlify(sp.subpiece(0, 2), out, true); sp.advance(2), out += '-';
   hexlify(sp.subpiece(0, 2), out, true); sp.advance(2), out += '-';

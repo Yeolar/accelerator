@@ -17,15 +17,24 @@
 
 #pragma once
 
+#include <string>
 #include <typeinfo>
-
-#include "accelerator/FBString.h"
 
 namespace acc {
 
-fbstring demangle(const char* name);
-
-inline fbstring demangle(const std::type_info& type) {
+/**
+ * Return the demangled (prettyfied) version of a C++ type.
+ *
+ * This function tries to produce a human-readable type, but the type name will
+ * be returned unchanged in case of error or if demangling isn't supported on
+ * your system.
+ *
+ * Use for debugging -- do not rely on demangle() returning anything useful.
+ *
+ * This function may allocate memory (and therefore throw std::bad_alloc).
+ */
+std::string demangle(const char* name);
+inline std::string demangle(const std::type_info& type) {
   return demangle(type.name());
 }
 

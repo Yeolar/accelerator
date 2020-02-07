@@ -96,7 +96,7 @@ void MonitorBase::run() {
         sender_(data);
       }
     }
-    sleep(1);
+    std::this_thread::yield();
   }
 }
 

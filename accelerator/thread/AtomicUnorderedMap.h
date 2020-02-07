@@ -29,7 +29,7 @@
 #include "accelerator/Bits.h"
 #include "accelerator/Conv.h"
 #include "accelerator/Macro.h"
-#include "accelerator/Memory.h"
+#include "accelerator/MMapAlloc.h"
 #include "accelerator/Random.h"
 
 namespace acc {
@@ -116,7 +116,7 @@ namespace acc {
 ///   assignment, and it is no longer lock-free.  It scales very well,
 ///   because the readers are still invisible (no cache line writes).
 ///
-///   LOCK: acc's SharedMutex would be a good choice here.
+///   LOCK: shared_mutex would be a good choice here.
 ///
 /// MEMORY ALLOCATION
 ///
@@ -455,9 +455,9 @@ struct AtomicUnorderedInsertMap {
     } else {
       IndexType rv;
       if (sizeof(IndexType) <= 4) {
-        rv = IndexType(Random::rand32(0, numSlots_));
+        rv = IndexType(Random::rand32(numSlots_));
       } else {
-        rv = IndexType(Random::rand64(0, numSlots_));
+        rv = IndexType(Random::rand64(numSlots_));
       }
       assert(rv < numSlots_);
       return rv;

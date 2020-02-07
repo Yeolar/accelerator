@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -33,15 +34,19 @@
 
 namespace acc {
 
-typedef unsigned char uuid_t[16];
+class Uuid {
+ public:
+  typedef std::array<uint8_t, 16> value_type;
 
-struct uuid {
-  uint32_t time_low;
-  uint16_t time_mid;
-  uint16_t time_hi_and_version;
-  uint16_t clock_seq;
-  uint8_t node[6];
+  std::string generateTime();
+
+ private:
+  int generateTime(uuid_t out);
+
+  value_type uuid_;
 };
+
+typedef unsigned char uuid_t[16];
 
 void uuidPack(const struct uuid *uu, uuid_t ptr);
 void uuidUnpack(const uuid_t in, struct uuid *uu);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "accelerator/SysUtil.h"
+#include "accelerator/SystemUtil.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -23,6 +23,8 @@
 #define _GNU_SOURCE
 #endif
 #include <sched.h>
+#include <sys/statvfs.h>
+#include <sys/sysinfo.h>
 
 namespace acc {
 
@@ -47,7 +49,31 @@ int getCpuAffinity(pid_t pid) {
   return -1;
 }
 
-void ProcessInfo::initMemory() {
+FsInfo getFsInfo(const char* path) {
+  FsInfo info;
+
+  struct statvfs stats;
+  statvfs(path, &stats);
+
+  info.freeBlocks = stats.f_bsize * stats.f_bfree;
+  info.availableBlocks = stats.f_bsize * stats.f_bavail;
+  return info;
+}
+
+SystemMemory getSystemMemory() {
+  SystemMemory mem;
+
+  struct sysinfo info;
+  sysinfo(&info);
+
+  mem.total = info.totalram;
+  mem.free = info.freeram;
+  return mem;
+}
+
+ProcessMemory getProcessMemory() {
+  ProcessMemory mem;
+
   auto extractNumeric = [](char* p) -> size_t {
     p[strlen(p) - 3] = '\0';
     while (*p < '0' || *p > '9') p++;
@@ -58,13 +84,14 @@ void ProcessInfo::initMemory() {
   char line[128];
   while (fgets(line, 128, file) != nullptr) {
     if (strncmp(line, "VmRSS:", 6) == 0) {
-      memRSS = extractNumeric(line);
+      mem.rss = extractNumeric(line);
     }
     if (strncmp(line, "VmSize:", 7) == 0) {
-      memTotal = extractNumeric(line);
+      mem.total = extractNumeric(line);
     }
   }
   fclose(file);
+  return mem;
 }
 
 } // namespace acc

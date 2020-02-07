@@ -16,24 +16,21 @@
 
 #include "accelerator/Time.h"
 
-#include <cmath>
+#include <algorithm>
 #include <cstring>
 #include <stdexcept>
-
-#include "accelerator/Logging.h"
 
 namespace acc {
 
 std::string timePrintf(time_t t, const char *format) {
   std::string output;
-  struct tm tm;
-
-  ::localtime_r(&t, &tm);
-
   size_t formatLen = strlen(format);
   size_t remaining = std::max(32UL, formatLen * 2);
-  output.resize(remaining);
   size_t bytesUsed = 0;
+  struct tm tm;
+
+  output.resize(remaining);
+  ::localtime_r(&t, &tm);
 
   do {
     bytesUsed = strftime(&output[0], remaining, format, &tm);
@@ -49,22 +46,15 @@ std::string timePrintf(time_t t, const char *format) {
   } while (bytesUsed == 0);
 
   output.resize(bytesUsed);
-
   return output;
 }
 
 bool isSameDay(time_t t1, time_t t2) {
-  struct tm tm;
-
-  ::localtime_r(&t1, &tm);
-  int y1 = tm.tm_year;
-  int d1 = tm.tm_yday;
-
-  ::localtime_r(&t2, &tm);
-  int y2 = tm.tm_year;
-  int d2 = tm.tm_yday;
-
-  return (y1 == y2 && d1 == d2);
+  struct tm tm1, tm2;
+  ::localtime_r(&t1, &tm1);
+  ::localtime_r(&t2, &tm2);
+  return (tm1.tm_year == tm2.tm_year &&
+          tm1.tm_yday == tm2.tm_yday);
 }
 
 } // namespace acc

@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2011 The LevelDB Authors.
  * Copyright 2017 Yeolar
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,37 +16,47 @@
 
 #pragma once
 
-#include "accelerator/Asm.h"
+#include "accelerator/Time.h"
 
 namespace acc {
 
-class AtomicPtr {
+class TimeWatcher {
  public:
-  AtomicPtr() {}
+  TimeWatcher() : checkpoint_(timestampNow()) {}
 
-  explicit AtomicPtr(void* p) : rep_(p) {}
-
-  inline void* NoBarrier_Load() const {
-    return rep_;
+  void reset() {
+    checkpoint_ = timestampNow();
   }
 
-  inline void NoBarrier_Store(void* v) {
-    rep_ = v;
+  uint64_t elapsed() const {
+    return acc::elapsed(checkpoint_);
   }
 
-  inline void* Acquire_Load() const {
-    void* result = rep_;
-    asm_volatile_memory();
-    return result;
+  bool elapsed(uint64_t duration) const {
+    return acc::elapsed(checkpoint_) >= duration;
   }
 
-  inline void Release_Store(void* v) {
-    asm_volatile_memory();
-    rep_ = v;
+  uint64_t lap() {
+    uint64_t interval = elapsed();
+    checkpoint_ += interval;
+    return interval;
+  }
+
+  bool lap(uint64_t duration) {
+    uint64_t interval = elapsed();
+    if (interval < duration) {
+      return false;
+    }
+    checkpoint_ += interval;
+    return true;
+  }
+
+  uint64_t getCheckpoint() const {
+    return checkpoint_;
   }
 
  private:
-  void* rep_;
+  uint64_t checkpoint_;
 };
 
 } // namespace acc

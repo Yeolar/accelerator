@@ -15,10 +15,32 @@
  * limitations under the License.
  */
 
-#include "accelerator/thread/SharedMutex.h"
+#include "accelerator/Exception.h"
+
+#include <execinfo.h>
 
 namespace acc {
-// Explicitly instantiate SharedMutex here:
-template class SharedMutexImpl<true>;
-template class SharedMutexImpl<false>;
-} // namespace acc
+
+std::vector<std::string> recordBacktrace() {
+  std::vector<std::string> out;
+  void* array[128];
+  int n = backtrace(array, 128);
+  char** lines = backtrace_symbols(array, n);
+  if (lines != nullptr && n > 0) {
+    for (int i = 1; i < n; i++) {
+      out.emplace_back(lines[i]);
+    }
+  }
+  free(lines);
+  return out;
+}
+
+void recordBacktraceToStr(std::string& out) {
+  auto trace = recordBacktrace();
+  out += ", trace info:";
+  for (auto& s : trace) {
+    out += '\n' + s;
+  }
+}
+
+}  // namespace acc

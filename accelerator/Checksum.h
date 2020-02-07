@@ -20,20 +20,42 @@
 #include <cstddef>
 #include <cstdint>
 
+/*
+ * Checksum functions
+ */
+
 namespace acc {
 
-uint32_t crc32c(const uint8_t* data, size_t nbytes,
-                uint32_t startingChecksum = ~0U);
-
-uint32_t crc32(const uint8_t* data, size_t nbytes,
-               uint32_t startingChecksum = ~0U);
-
-/*
- * compared to crc32(), crc32_type() uses a different set of default
- * parameters to match the results returned by boost::crc_32_type and
- * php's built-in crc32 implementation
+/**
+ * Compute the CRC-32C checksum of a buffer, using a hardware-accelerated
+ * implementation if available or a portable software implementation as
+ * a default.
+ *
+ * @note CRC-32C is different from CRC-32; CRC-32C starts with a different
+ *       polynomial and thus yields different results for the same input
+ *       than a traditional CRC-32.
  */
-uint32_t crc32_type(const uint8_t* data, size_t nbytes,
-                    uint32_t startingChecksum = ~0U);
+uint32_t crc32c(const uint8_t* data, size_t nbytes,
+    uint32_t startingChecksum = ~0U);
+
+/**
+ * Compute the CRC-32 checksum of a buffer, using a hardware-accelerated
+ * implementation if available or a portable software implementation as
+ * a default.
+ */
+uint32_t
+crc32(const uint8_t* data, size_t nbytes, uint32_t startingChecksum = ~0U);
+
+/**
+ * Compute the CRC-32 checksum of a buffer, using a hardware-accelerated
+ * implementation if available or a portable software implementation as
+ * a default.
+ *
+ * @note compared to crc32(), crc32_type() uses a different set of default
+ *       parameters to match the results returned by boost::crc_32_type and
+ *       php's built-in crc32 implementation
+ */
+uint32_t
+crc32_type(const uint8_t* data, size_t nbytes, uint32_t startingChecksum = ~0U);
 
 } // namespace acc

@@ -18,179 +18,155 @@
 #pragma once
 
 #include <cassert>
+#include <cerrno>
 #include <cstddef>
 #include <cstdlib>
+#include <exception>
 #include <limits>
 #include <memory>
-#include <system_error>
+#include <stdexcept>
 #include <utility>
-#include <unistd.h>
-#include <sys/mman.h>
 
 namespace acc {
 
-/**
- * For exception safety and consistency with make_shared. Erase me when
- * we have std::make_unique().
- *
- * @author Louis Brandy (ldbrandy@fb.com)
- * @author Xu Ning (xning@fb.com)
- */
+#if _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600
 
-template<typename T, typename Dp = std::default_delete<T>, typename... Args>
-typename std::enable_if<!std::is_array<T>::value, std::unique_ptr<T, Dp>>::type
-make_unique(Args&&... args) {
-  return std::unique_ptr<T, Dp>(new T(std::forward<Args>(args)...));
+inline void* aligned_malloc(size_t size, size_t align) {
+  // use posix_memalign, but mimic the behaviour of memalign
+  void* ptr = nullptr;
+  int rc = posix_memalign(&ptr, align, size);
+  return rc == 0 ? (errno = 0, ptr) : (errno = rc, nullptr);
 }
 
-// Allows 'make_unique<T[]>(10)'. (N3690 s20.9.1.4 p3-4)
-template<typename T, typename Dp = std::default_delete<T>>
-typename std::enable_if<std::is_array<T>::value, std::unique_ptr<T, Dp>>::type
-make_unique(const size_t n) {
-  return std::unique_ptr<T, Dp>(new typename std::remove_extent<T>::type[n]());
+#else
+
+inline void* aligned_malloc(size_t size, size_t align) {
+  return memalign(align, size);
 }
 
-// Disallows 'make_unique<T[10]>()'. (N3690 s20.9.1.4 p5)
-template<typename T, typename Dp = std::default_delete<T>, typename... Args>
-typename std::enable_if<
-  std::extent<T>::value != 0, std::unique_ptr<T, Dp>>::type
-make_unique(Args&&...) = delete;
+#endif
 
 /**
  * static_function_deleter
  *
  * So you can write this:
  *
- *  using RSA_deleter = folly::static_function_deleter<RSA, &RSA_free>;
- *  auto rsa = std::unique_ptr<RSA, RSA_deleter>(RSA_new());
- *  RSA_generate_key_ex(rsa.get(), bits, exponent, nullptr);
- *  rsa = nullptr;  // calls RSA_free(rsa.get())
+ *      using RSA_deleter = acc::static_function_deleter<RSA, &RSA_free>;
+ *      auto rsa = std::unique_ptr<RSA, RSA_deleter>(RSA_new());
+ *      RSA_generate_key_ex(rsa.get(), bits, exponent, nullptr);
+ *      rsa = nullptr;  // calls RSA_free(rsa.get())
  *
  * This would be sweet as well for BIO, but unfortunately BIO_free has signature
  * int(BIO*) while we require signature void(BIO*). So you would need to make a
  * wrapper for it:
  *
- *  inline void BIO_free_fb(BIO* bio) { CHECK_EQ(1, BIO_free(bio)); }
- *  using BIO_deleter = folly::static_function_deleter<BIO, &BIO_free_fb>;
- *  auto buf = std::unique_ptr<BIO, BIO_deleter>(BIO_new(BIO_s_mem()));
- *  buf = nullptr;  // calls BIO_free(buf.get())
+ *      inline void BIO_free_fb(BIO* bio) { CHECK_EQ(1, BIO_free(bio)); }
+ *      using BIO_deleter = acc::static_function_deleter<BIO, &BIO_free_fb>;
+ *      auto buf = std::unique_ptr<BIO, BIO_deleter>(BIO_new(BIO_s_mem()));
+ *      buf = nullptr;  // calls BIO_free(buf.get())
  */
 
-template <typename T, void(*f)(T*)>
+template <typename T, void (*f)(T*)>
 struct static_function_deleter {
   void operator()(T* t) const {
     f(t);
   }
 };
 
-/**
- * StlAllocator wraps a SimpleAllocator into a STL-compliant
- * allocator, maintaining an instance pointer to the simple allocator
- * object.  The underlying SimpleAllocator object must outlive all
- * instances of StlAllocator using it.
- */
-
-template <class Alloc, class T>
-class StlAllocator {
- public:
-  typedef T value_type;
-  typedef T* pointer;
-  typedef T& reference;
-  typedef const T* const_pointer;
-  typedef const T& const_reference;
-  typedef size_t size_type;
-  typedef ptrdiff_t difference_type;
-
-  template <class U>
-  struct rebind {
-    typedef StlAllocator<Alloc, U> other;
-  };
-
-  StlAllocator() : alloc_(nullptr) {}
-  explicit StlAllocator(Alloc* a) : alloc_(a) {}
-
-  template <class U>
-  StlAllocator(const StlAllocator<Alloc, U>& other) : alloc_(other.alloc()) {}
-
-  T* address(T& x) const { return &x; }
-  const T* address(const T& x) const { return &x; }
-
-  T* allocate(size_t n, const void* hint = nullptr) {
-    return static_cast<T*>(alloc_->allocate(n * sizeof(T)));
-  }
-
-  void deallocate(T* p, size_t n) {
-    alloc_->deallocate(p);
-  }
-
-  size_t max_size() const {
-    return std::numeric_limits<size_t>::max();
-  }
-
-  template <class... Args>
-  void construct(T* p, Args&&... args) {
-    new (p) T(std::forward<Args>(args)...);
-  }
-
-  void destroy(T* p) { p->~T(); }
-
-  Alloc* alloc() const { return alloc_; }
-
-  bool operator!=(const StlAllocator<Alloc, T>& other) const {
-    return alloc_ != other.alloc_;
-  }
-
-  bool operator==(const StlAllocator<Alloc, T>& other) const {
-    return alloc_ == other.alloc_;
-  }
-
- private:
-  Alloc* alloc_;
+namespace detail {
+template <typename T>
+struct lift_void_to_char {
+  using type = T;
 };
-
-class MMapAlloc {
- private:
-  size_t computeSize(size_t size) {
-    long pagesize = sysconf(_SC_PAGESIZE);
-    size_t mmapLength = ((size - 1) & ~(pagesize - 1)) + pagesize;
-    assert(size <= mmapLength && mmapLength < size + pagesize);
-    assert((mmapLength % pagesize) == 0);
-    return mmapLength;
-  }
-
- public:
-  void* allocate(size_t size) {
-    auto len = computeSize(size);
-
-    // MAP_HUGETLB is a perf win, but requires cooperation from the
-    // deployment environment (and a change to computeSize()).
-    void* mem = static_cast<void*>(mmap(
-        nullptr,
-        len,
-        PROT_READ | PROT_WRITE,
-        MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE,
-        -1,
-        0));
-    if (mem == reinterpret_cast<void*>(-1)) {
-      throw std::system_error(errno, std::system_category());
-    }
-    return mem;
-  }
-
-  void deallocate(void* p, size_t size) {
-    auto len = computeSize(size);
-    munmap(p, len);
-  }
-};
-
-template <typename Allocator>
-struct GivesZeroFilledMemory : public std::false_type {};
-
 template <>
-struct GivesZeroFilledMemory<MMapAlloc> : public std::true_type {};
+struct lift_void_to_char<void> {
+  using type = char;
+};
+} // namespace detail
 
-inline void* alignAddress(void* addr) {
-  return (void*)(((size_t)addr) & ~((size_t)sysconf(_SC_PAGESIZE) - 1));
-}
+/**
+ * SysAllocator
+ *
+ * Resembles std::allocator, the default Allocator, but wraps std::malloc and
+ * std::free.
+ */
+template <typename T>
+class SysAllocator {
+ private:
+  using Self = SysAllocator<T>;
+
+ public:
+  using value_type = T;
+
+  T* allocate(size_t count) {
+    using lifted = typename detail::lift_void_to_char<T>::type;
+    auto const p = std::malloc(sizeof(lifted) * count);
+    if (!p) {
+      throw std::bad_alloc();
+    }
+    return static_cast<T*>(p);
+  }
+  void deallocate(T* p, size_t /* count */) {
+    std::free(p);
+  }
+
+  friend bool operator==(Self const&, Self const&) noexcept {
+    return true;
+  }
+  friend bool operator!=(Self const&, Self const&) noexcept {
+    return false;
+  }
+};
+
+/**
+ * CxxAllocatorAdaptor
+ *
+ * A type conforming to C++ concept Allocator, delegating operations to an
+ * unowned Inner which has this required interface:
+ *
+ *   void* allocate(std::size_t)
+ *   void deallocate(void*, std::size_t)
+ *
+ * Note that Inner is *not* a C++ Allocator.
+ */
+template <typename T, class Inner>
+class CxxAllocatorAdaptor {
+ private:
+  using Self = CxxAllocatorAdaptor<T, Inner>;
+
+  template <typename U, typename UAlloc>
+  friend class CxxAllocatorAdaptor;
+
+  std::reference_wrapper<Inner> ref_;
+
+ public:
+  using value_type = T;
+
+  using propagate_on_container_copy_assignment = std::true_type;
+  using propagate_on_container_move_assignment = std::true_type;
+  using propagate_on_container_swap = std::true_type;
+
+  explicit CxxAllocatorAdaptor(Inner& ref) : ref_(ref) {}
+
+  template <typename U>
+  explicit CxxAllocatorAdaptor(CxxAllocatorAdaptor<U, Inner> const& other)
+      : ref_(other.ref_) {}
+
+  T* allocate(std::size_t n) {
+    using lifted = typename detail::lift_void_to_char<T>::type;
+    return static_cast<T*>(ref_.get().allocate(sizeof(lifted) * n));
+  }
+  void deallocate(T* p, std::size_t n) {
+    using lifted = typename detail::lift_void_to_char<T>::type;
+    ref_.get().deallocate(p, sizeof(lifted) * n);
+  }
+
+  friend bool operator==(Self const& a, Self const& b) noexcept {
+    return std::addressof(a.ref_.get()) == std::addressof(b.ref_.get());
+  }
+  friend bool operator!=(Self const& a, Self const& b) noexcept {
+    return std::addressof(a.ref_.get()) != std::addressof(b.ref_.get());
+  }
+};
 
 } // namespace acc

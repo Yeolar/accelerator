@@ -22,17 +22,14 @@
 
 namespace acc {
 
-fbstring demangle(const char* name) {
+std::string demangle(const char* name) {
   int status;
-  size_t len = 0;
   // malloc() memory for the demangled type name
-  char* demangled = abi::__cxa_demangle(name, nullptr, &len, &status);
+  char* demangled = abi::__cxa_demangle(name, nullptr, nullptr, &status);
   if (status != 0) {
     return name;
   }
-  // len is the length of the buffer (including NUL terminator and maybe
-  // other junk)
-  return fbstring(demangled, strlen(demangled), len, AcquireMallocatedString());
+  return std::string(demangled);
 }
 
 } // namespace acc

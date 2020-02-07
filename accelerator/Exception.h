@@ -18,29 +18,33 @@
 #pragma once
 
 #include <cerrno>
+#include <string>
 #include <system_error>
+#include <vector>
 
-#include "accelerator/Backtrace.h"
 #include "accelerator/Conv.h"
 
 namespace acc {
 
 // Helper to throw std::system_error
-inline void throwSystemErrorExplicit(int err, const char* msg) {
+[[noreturn]] inline void throwSystemErrorExplicit(int err, const char* msg) {
   throw std::system_error(err, std::system_category(), msg);
 }
 
 template <class... Args>
-void throwSystemErrorExplicit(int err, Args&&... args) {
+[[noreturn]] void throwSystemErrorExplicit(int err, Args&&... args) {
   throwSystemErrorExplicit(
-    err, to<fbstring>(std::forward<Args>(args)...).c_str());
+    err, to<std::string>(std::forward<Args>(args)...).c_str());
 }
 
+// Helper to throw std::system_error from errno and components of a string
 template <class... Args>
-void throwSystemError(Args&&... args) {
+[[noreturn]] void throwSystemError(Args&&... args) {
   throwSystemErrorExplicit(errno, std::forward<Args>(args)...);
 }
 
+// Check a Posix return code (0 on success, error number on error), throw
+// on error.
 template <class... Args>
 void checkPosixError(int err, Args&&... args) {
   if (UNLIKELY(err != 0)) {
@@ -48,6 +52,17 @@ void checkPosixError(int err, Args&&... args) {
   }
 }
 
+// Check a Linux kernel-style return code (>= 0 on success, negative error
+// number on error), throw on error.
+template <class... Args>
+void checkKernelError(ssize_t ret, Args&&... args) {
+  if (UNLIKELY(ret < 0)) {
+    throwSystemErrorExplicit(int(-ret), std::forward<Args>(args)...);
+  }
+}
+
+// Check a traditional Unix return code (-1 and sets errno on error), throw
+// on error.
 template <class... Args>
 void checkUnixError(ssize_t ret, Args&&... args) {
   if (UNLIKELY(ret == -1)) {
@@ -56,16 +71,26 @@ void checkUnixError(ssize_t ret, Args&&... args) {
 }
 
 template <class... Args>
+void checkUnixErrorExplicit(ssize_t ret, int savedErrno, Args&&... args) {
+  if (UNLIKELY(ret == -1)) {
+    throwSystemErrorExplicit(savedErrno, std::forward<Args>(args)...);
+  }
+}
+
+// Check the return code from a fopen-style function (returns a non-nullptr
+// FILE* on success, nullptr on error, sets errno).  Works with fopen, fdopen,
+// freopen, tmpfile, etc.
+template <class... Args>
 void checkFopenError(FILE* fp, Args&&... args) {
   if (UNLIKELY(!fp)) {
     throwSystemError(std::forward<Args>(args)...);
   }
 }
 
-template <typename E, typename V, typename... Args>
-void throwOnFail(V&& value, Args&&... args) {
-  if (!value) {
-    throw E(std::forward<Args>(args)...);
+template <class... Args>
+void checkFopenErrorExplicit(FILE* fp, int savedErrno, Args&&... args) {
+  if (UNLIKELY(!fp)) {
+    throwSystemErrorExplicit(savedErrno, std::forward<Args>(args)...);
   }
 }
 
@@ -73,46 +98,44 @@ void throwOnFail(V&& value, Args&&... args) {
  * If cond is not true, raise an exception of type E.  E must have a ctor that
  * works with const char* (a description of the failure).
  */
-#define ACC_CHECK_THROW(cond, E) \
-  ::acc::throwOnFail<E>((cond), "Check failed: " #cond \
-                        " @(", __FILE__, ":", __LINE__, ")")
+#define ACC_CHECK_THROW(cond, E)                                            \
+  do {                                                                      \
+    if (!(cond)) {                                                          \
+      throw E("Check failed: " #cond " @(", __FILE__, ":", __LINE__, ")");  \
+    }                                                                       \
+  } while (0)
 
 //////////////////////////////////////////////////////////////////////
 
-template <class Tag = void, bool tracing = false>
-class ExceptionBase : public std::exception {
+std::vector<std::string> recordBacktrace();
+
+void recordBacktraceToStr(std::string& out);
+
+template <class Tag = void>
+class TracingExceptionBase : public std::exception {
  public:
   template <class... Args>
-  explicit ExceptionBase(Args&&... args)
-    : msg_(to<fbstring>(std::forward<Args>(args)...)) {
-    if (tracing) {
-      auto trace = recordBacktrace();
-      toAppend(", trace info:", &msg_);
-      for (auto& s : trace) {
-        toAppend('\n', s, &msg_);
-      }
-    }
+  explicit TracingExceptionBase(Args&&... args)
+    : msg_(acc::to<std::string>(std::forward<Args>(args)...)) {
+      recordBacktraceToStr(msg_);
   }
 
-  virtual ~ExceptionBase() {}
+  virtual ~TracingExceptionBase() {}
 
   virtual const char* what() const noexcept {
     return msg_.c_str();
   }
 
  private:
-  fbstring msg_;
+  std::string msg_;
 };
-
-typedef ExceptionBase<> Exception;
-
-#define ACC_EXCEPTION(ex_name) \
-  struct ex_name##Tag {}; \
-  typedef acc::ExceptionBase<ex_name##Tag> ex_name
 
 #define ACC_TRACING_EXCEPTION(ex_name) \
   struct ex_name##Tag {}; \
-  typedef acc::ExceptionBase<ex_name##Tag, true> ex_name
+  typedef acc::TracingExceptionBase<ex_name##Tag> ex_name
+
+#define ACC_TRACING_THROW(E, ...) \
+  throw E(#E, " @(", __FILE__, ":", __LINE__, "): \"", ##__VA_ARGS__, "\"")
 
 // logic error
 ACC_TRACING_EXCEPTION(LogicError);
@@ -127,8 +150,5 @@ ACC_TRACING_EXCEPTION(RangeError);
 ACC_TRACING_EXCEPTION(OverflowError);
 ACC_TRACING_EXCEPTION(UnderflowError);
 ACC_TRACING_EXCEPTION(NotImplementedError);
-
-#define ACC_THROW(E, ...) \
-  throw E(#E, " @(", __FILE__, ":", __LINE__, "): \"", ##__VA_ARGS__, "\"")
 
 } // namespace acc
