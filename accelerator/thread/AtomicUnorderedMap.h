@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <system_error>
 #include <type_traits>
+
 #include <boost/type_traits/has_trivial_destructor.hpp>
 
 #include "accelerator/Bits.h"
@@ -455,9 +456,9 @@ struct AtomicUnorderedInsertMap {
     } else {
       IndexType rv;
       if (sizeof(IndexType) <= 4) {
-        rv = IndexType(Random::rand32(numSlots_));
+        rv = IndexType(acc::Random::rand32(numSlots_));
       } else {
-        rv = IndexType(Random::rand64(numSlots_));
+        rv = IndexType(acc::Random::rand64(numSlots_));
       }
       assert(rv < numSlots_);
       return rv;
@@ -500,6 +501,7 @@ using AtomicUnorderedInsertMap64 =
 template <typename T>
 struct MutableAtom {
   mutable std::atomic<T> data;
+
   explicit MutableAtom(const T& init) : data(init) {}
 };
 

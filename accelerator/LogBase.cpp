@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,10 +21,11 @@
 #include <sys/stat.h>
 
 #include "accelerator/Exception.h"
+#include "accelerator/FileUtil.h"
 #include "accelerator/String.h"
-#include "accelerator/io/FileUtil.h"
-#include "accelerator/io/FSUtil.h"
-#include "accelerator/thread/ThreadUtil.h"
+#include "accelerator/io/FsUtil.h"
+#include "accelerator/thread/ThreadId.h"
+#include "accelerator/thread/ThreadName.h"
 
 namespace {
 
@@ -71,8 +72,8 @@ size_t writeLogHeader(char* buffer,
   p += r;
   n -= r;
 
-  int tid = osThreadId();
-  r = snprintf(p, n, ".%06zu %5d %s:%d] ", now % 1000000, tid, file, line);
+  int tid = getOSThreadID();
+  r = snprintf(p, n, ".%06llu %5d %s:%d] ", now % 1000000, tid, file, line);
   p += r;
   n -= r;
 

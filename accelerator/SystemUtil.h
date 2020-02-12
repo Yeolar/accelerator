@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,15 +24,10 @@ inline int getCpuNum() {
   return sysconf(_SC_NPROCESSORS_CONF);
 }
 
+#ifdef __linux__
+
 bool setCpuAffinity(int cpu, pid_t pid = 0);
 int getCpuAffinity(pid_t pid = 0);
-
-struct FsInfo {
-  size_t freeBlocks;
-  size_t availableBlocks;
-};
-
-FsInfo getFsInfo(const char* path);
 
 struct SystemMemory {
   size_t total;
@@ -47,5 +42,14 @@ struct ProcessMemory {
 };
 
 ProcessMemory getProcessMemory();
+
+#endif
+
+struct FsInfo {
+  size_t freeBlocks;
+  size_t availableBlocks;
+};
+
+FsInfo getFsInfo(const char* path);
 
 } // namespace acc

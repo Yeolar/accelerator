@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,14 +17,9 @@
 
 #pragma once
 
-#include <functional>
 #include <string>
-#include <tuple>
-#include <utility>
 #include <vector>
 
-#include "accelerator/Conv.h"
-#include "accelerator/Hash.h"
 #include "accelerator/String.h"
 
 namespace acc {
@@ -77,11 +72,7 @@ class Uri {
 
   std::string authority() const;
 
-  template <class String>
-  String toString() const;
-
-  std::string str() const { return toString<std::string>(); }
-  fbstring fbstr() const { return toString<fbstring>(); }
+  std::string str() const;
 
   void setPort(uint16_t port) {
     hasAuthority_ = true;
@@ -123,76 +114,6 @@ class Uri {
   std::vector<std::pair<std::string, std::string>> queryParams_;
 };
 
-template <class String>
-String Uri::toString() const {
-  String str;
-  if (hasAuthority_) {
-    toAppend(scheme_, "://", &str);
-    if (!password_.empty()) {
-      toAppend(username_, ":", password_, "@", &str);
-    } else if (!username_.empty()) {
-      toAppend(username_, "@", &str);
-    }
-    toAppend(host_, &str);
-    if (port_ != 0) {
-      toAppend(":", port_, &str);
-    }
-  } else {
-    toAppend(scheme_, ":", &str);
-  }
-  toAppend(path_, &str);
-  if (!query_.empty()) {
-    toAppend("?", query_, &str);
-  }
-  if (!fragment_.empty()) {
-    toAppend("#", fragment_, &str);
-  }
-  return str;
-}
-
-namespace uri_detail {
-
-typedef std::tuple<
-    const std::string&,
-    const std::string&,
-    const std::string&,
-    const std::string&,
-    uint16_t,
-    const std::string&,
-    const std::string&,
-    const std::string&> UriTuple;
-
-inline UriTuple as_tuple(const acc::Uri& k) {
-  return UriTuple(
-      k.scheme(),
-      k.username(),
-      k.password(),
-      k.host(),
-      k.port(),
-      k.path(),
-      k.query(),
-      k.fragment());
-}
-
-} // namespace uri_detail
-
 } // namespace acc
 
-namespace std {
-
-template <>
-struct hash<acc::Uri> {
-  std::size_t operator()(const acc::Uri& k) const {
-    return std::hash<acc::uri_detail::UriTuple>()(
-        acc::uri_detail::as_tuple(k));
-  }
-};
-
-template <>
-struct equal_to<acc::Uri> {
-  bool operator()(const acc::Uri& a, const acc::Uri& b) const {
-    return acc::uri_detail::as_tuple(a) == acc::uri_detail::as_tuple(b);
-  }
-};
-
-} // namespace std
+#include "accelerator/Uri-inl.h"

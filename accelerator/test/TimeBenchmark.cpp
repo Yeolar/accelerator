@@ -17,7 +17,6 @@
 #include <sys/time.h>
 
 #include "accelerator/Benchmark.h"
-#include "accelerator/Portability.h"
 #include "accelerator/Time.h"
 
 using namespace acc;

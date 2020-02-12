@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,22 +18,18 @@
 #include "accelerator/Uri.h"
 
 #include <cctype>
+
 #include <boost/regex.hpp>
+
+#include "accelerator/Conv.h"
 
 namespace acc {
 
 namespace {
 
 std::string submatch(const boost::cmatch& m, int idx) {
-  auto& sub = m[idx];
+  const auto& sub = m[idx];
   return std::string(sub.first, sub.second);
-}
-
-template <class String>
-void toLower(String& s) {
-  for (auto& c : s) {
-    c = char(tolower(c));
-  }
 }
 
 } // namespace
@@ -47,12 +43,12 @@ Uri::Uri(StringPiece str) : hasAuthority_(false), port_(0) {
   static const boost::regex authorityAndPathRegex("//([^/]*)(/.*)?");
 
   boost::cmatch match;
-  if (UNLIKELY(!boost::regex_match(str.begin(), str.end(), match, uriRegex))) {
+  if (ACC_UNLIKELY(!boost::regex_match(str.begin(), str.end(), match, uriRegex))) {
     throw std::invalid_argument(to<std::string>("invalid URI ", str));
   }
 
   scheme_ = submatch(match, 1);
-  toLower(scheme_);
+  std::transform(scheme_.begin(), scheme_.end(), scheme_.begin(), ::tolower);
 
   StringPiece authorityAndPath(match[2].first, match[2].second);
   boost::cmatch authorityAndPathMatch;
@@ -70,7 +66,7 @@ Uri::Uri(StringPiece str) : hasAuthority_(false), port_(0) {
                                        // dotted-IPv4, or named host)
         "(?::(\\d*))?");               // port
 
-    auto authority = authorityAndPathMatch[1];
+    const auto authority = authorityAndPathMatch[1];
     boost::cmatch authorityMatch;
     if (!boost::regex_match(authority.first,
                             authority.second,
@@ -124,6 +120,32 @@ std::string Uri::authority() const {
   return result;
 }
 
+std::string Uri::str() const {
+  std::string str;
+  if (hasAuthority_) {
+    toAppend(scheme_, "://", &str);
+    if (!password_.empty()) {
+      toAppend(username_, ":", password_, "@", &str);
+    } else if (!username_.empty()) {
+      toAppend(username_, "@", &str);
+    }
+    toAppend(host_, &str);
+    if (port_ != 0) {
+      toAppend(":", port_, &str);
+    }
+  } else {
+    toAppend(scheme_, ":", &str);
+  }
+  toAppend(path_, &str);
+  if (!query_.empty()) {
+    toAppend("?", query_, &str);
+  }
+  if (!fragment_.empty()) {
+    toAppend("#", fragment_, &str);
+  }
+  return str;
+}
+
 std::string Uri::hostname() const {
   if (host_.size() > 0 && host_[0] == '[') {
     // If it starts with '[', then it should end with ']', this is ensured by
@@ -142,10 +164,10 @@ const std::vector<std::pair<std::string, std::string>>& Uri::getQueryParams() {
         "([^=&]*)" /*parameter value*/
         "(?=(&|$))" /*forward reference, next should be end of query or
                       start of next parameter*/);
-    boost::cregex_iterator paramBeginItr(
+    const boost::cregex_iterator paramBeginItr(
         query_.data(), query_.data() + query_.size(), queryParamRegex);
     boost::cregex_iterator paramEndItr;
-    for (auto itr = paramBeginItr; itr != paramEndItr; itr++) {
+    for (auto itr = paramBeginItr; itr != paramEndItr; ++itr) {
       if (itr->length(2) == 0) {
         // key is empty, ignore it
         continue;

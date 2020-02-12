@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,14 +32,15 @@
 #include <string>
 #include <type_traits>
 
-#include "accelerator/CPortability.h"
+#include "accelerator/Constexpr.h"
 #include "accelerator/Macro.h"
+#include "accelerator/Portability.h"
 #include "accelerator/SpookyHashV2.h"
 #include "accelerator/Traits.h"
 
 // Ignore shadowing warnings within this file, so includers can use -Wshadow.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
+ACC_PUSH_WARNING
+ACC_DISABLE_WARNING("-Wshadow")
 
 namespace acc {
 
@@ -216,7 +217,7 @@ class Range {
 
   template <class T = Iter, typename detail::IsCharPointer<T>::const_type = 0>
   Range(const std::string& str, std::string::size_type startFrom) {
-    if (UNLIKELY(startFrom > str.size())) {
+    if (ACC_UNLIKELY(startFrom > str.size())) {
       throw std::out_of_range("index out of range");
     }
     b_ = str.data() + startFrom;
@@ -228,7 +229,7 @@ class Range {
       const std::string& str,
       std::string::size_type startFrom,
       std::string::size_type size) {
-    if (UNLIKELY(startFrom > str.size())) {
+    if (ACC_UNLIKELY(startFrom > str.size())) {
       throw std::out_of_range("index out of range");
     }
     b_ = str.data() + startFrom;
@@ -266,7 +267,7 @@ class Range {
   Range(Container const& container, typename Container::size_type startFrom) {
     auto const cdata = container.data();
     auto const csize = container.size();
-    if (UNLIKELY(startFrom > csize)) {
+    if (ACC_UNLIKELY(startFrom > csize)) {
       throw std::out_of_range("index out of range");
     }
     b_ = cdata + startFrom;
@@ -288,7 +289,7 @@ class Range {
       typename Container::size_type size) {
     auto const cdata = container.data();
     auto const csize = container.size();
-    if (UNLIKELY(startFrom > csize)) {
+    if (ACC_UNLIKELY(startFrom > csize)) {
       throw std::out_of_range("index out of range");
     }
     b_ = cdata + startFrom;
@@ -592,21 +593,21 @@ class Range {
   }
 
   void advance(size_type n) {
-    if (UNLIKELY(n > size())) {
+    if (ACC_UNLIKELY(n > size())) {
       throw std::out_of_range("index out of range");
     }
     b_ += n;
   }
 
   void subtract(size_type n) {
-    if (UNLIKELY(n > size())) {
+    if (ACC_UNLIKELY(n > size())) {
       throw std::out_of_range("index out of range");
     }
     e_ -= n;
   }
 
   Range subpiece(size_type first, size_type length = npos) const {
-    if (UNLIKELY(first > size())) {
+    if (ACC_UNLIKELY(first > size())) {
       throw std::out_of_range("index out of range");
     }
 
@@ -1421,4 +1422,4 @@ struct hasher<
 
 } // namespace acc
 
-#pragma GCC diagnostic pop
+ACC_POP_WARNING

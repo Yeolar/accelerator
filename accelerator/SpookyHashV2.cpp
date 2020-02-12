@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,6 +30,8 @@
 #include "accelerator/SpookyHashV2.h"
 
 #include <cstring>
+
+#include "accelerator/CppAttributes.h"
 
 #define ALLOW_UNALIGNED_READS 1
 
@@ -100,36 +102,47 @@ void SpookyHashV2::Short(
     {
     case 15:
         d += ((uint64_t)u.p8[14]) << 48;
+        ACC_FALLTHROUGH;
     case 14:
         d += ((uint64_t)u.p8[13]) << 40;
+        ACC_FALLTHROUGH;
     case 13:
         d += ((uint64_t)u.p8[12]) << 32;
+        ACC_FALLTHROUGH;
     case 12:
         d += u.p32[2];
         c += u.p64[0];
         break;
     case 11:
         d += ((uint64_t)u.p8[10]) << 16;
+        ACC_FALLTHROUGH;
     case 10:
         d += ((uint64_t)u.p8[9]) << 8;
+        ACC_FALLTHROUGH;
     case 9:
         d += (uint64_t)u.p8[8];
+        ACC_FALLTHROUGH;
     case 8:
         c += u.p64[0];
         break;
     case 7:
         c += ((uint64_t)u.p8[6]) << 48;
+        ACC_FALLTHROUGH;
     case 6:
         c += ((uint64_t)u.p8[5]) << 40;
+        ACC_FALLTHROUGH;
     case 5:
         c += ((uint64_t)u.p8[4]) << 32;
+        ACC_FALLTHROUGH;
     case 4:
         c += u.p32[0];
         break;
     case 3:
         c += ((uint64_t)u.p8[2]) << 16;
+        ACC_FALLTHROUGH;
     case 2:
         c += ((uint64_t)u.p8[1]) << 8;
+        ACC_FALLTHROUGH;
     case 1:
         c += (uint64_t)u.p8[0];
         break;

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,10 +17,9 @@
 
 #include "accelerator/Random.h"
 
-#include <memory>
-
+#include "accelerator/FileUtil.h"
 #include "accelerator/Logging.h"
-#include "accelerator/io/FileUtil.h"
+#include "accelerator/thread/ThreadLocal.h"
 
 namespace acc {
 
@@ -38,14 +37,10 @@ class BufferedRandomDevice {
  public:
   static constexpr size_t kDefaultBufferSize = 128;
 
-  explicit BufferedRandomDevice(size_t bufferSize = kDefaultBufferSize)
-    : bufferSize_(bufferSize),
-      buffer_(new unsigned char[bufferSize]),
-      ptr_(buffer_.get() + bufferSize) {  // refill on first use
-  }
+  explicit BufferedRandomDevice(size_t bufferSize = kDefaultBufferSize);
 
   void get(void* data, size_t size) {
-    if (LIKELY(size <= remaining())) {
+    if (ACC_LIKELY(size <= remaining())) {
       memcpy(data, ptr_, size);
       ptr_ += size;
     } else {
@@ -54,27 +49,9 @@ class BufferedRandomDevice {
   }
 
  private:
-  void getSlow(unsigned char* data, size_t size) {
-    if (size >= bufferSize_) {
-      // Just read directly.
-      readRandomDevice(data, size);
-      return;
-    }
+  void getSlow(unsigned char* data, size_t size);
 
-    size_t copied = remaining();
-    memcpy(data, ptr_, copied);
-    data += copied;
-    size -= copied;
-
-    // refill
-    readRandomDevice(buffer_.get(), bufferSize_);
-    ptr_ = buffer_.get();
-
-    memcpy(data, ptr_, size);
-    ptr_ += size;
-  }
-
-  size_t remaining() const {
+  inline size_t remaining() const {
     return size_t(buffer_.get() + bufferSize_ - ptr_);
   }
 
@@ -83,13 +60,47 @@ class BufferedRandomDevice {
   unsigned char* ptr_;
 };
 
+BufferedRandomDevice::BufferedRandomDevice(size_t bufferSize)
+  : bufferSize_(bufferSize),
+    buffer_(new unsigned char[bufferSize]),
+    ptr_(buffer_.get() + bufferSize) {  // refill on first use
+}
+
+void BufferedRandomDevice::getSlow(unsigned char* data, size_t size) {
+  DCHECK_GT(size, remaining());
+  if (size >= bufferSize_) {
+    // Just read directly.
+    readRandomDevice(data, size);
+    return;
+  }
+
+  size_t copied = remaining();
+  memcpy(data, ptr_, copied);
+  data += copied;
+  size -= copied;
+
+  // refill
+  readRandomDevice(buffer_.get(), bufferSize_);
+  ptr_ = buffer_.get();
+
+  memcpy(data, ptr_, size);
+  ptr_ += size;
+}
+
+struct RandomTag {};
+
 } // namespace
 
 void Random::secureRandom(void* data, size_t size) {
-  static ThreadLocal<BufferedRandomDevice> bufferedRandomDevice;
+  static ThreadLocal<BufferedRandomDevice, RandomTag> bufferedRandomDevice;
   bufferedRandomDevice.get()->get(data, size);
 }
 
-ThreadLocal<std::default_random_engine> Random::rng;
-
+ThreadLocalPRNG::result_type ThreadLocalPRNG::operator()() {
+  struct Wrapper {
+    Random::DefaultGenerator object{Random::create()};
+  };
+  static ThreadLocal<Wrapper, RandomTag> wrapper;
+  return wrapper.get()->object();
+}
 } // namespace acc

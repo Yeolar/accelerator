@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,12 +17,11 @@
 
 #pragma once
 
-#include <sys/mman.h>
+#include <boost/noncopyable.hpp>
 
+#include "accelerator/File.h"
 #include "accelerator/Logging.h"
-#include "accelerator/noncopyable.h"
 #include "accelerator/Range.h"
-#include "accelerator/io/File.h"
 
 namespace acc {
 
@@ -31,7 +30,7 @@ namespace acc {
  *
  * @author Tudor Bosman (tudorb@fb.com)
  */
-class MemoryMapping : noncopyable {
+class MemoryMapping : boost::noncopyable {
  public:
   /**
    * Lock the pages in memory?
@@ -108,6 +107,9 @@ class MemoryMapping : noncopyable {
     kAnonymous
   };
 
+  /**
+   * Create an anonymous mapping.
+   */
   MemoryMapping(AnonymousType, off_t length, Options options=Options());
 
   explicit MemoryMapping(File file,
@@ -125,16 +127,11 @@ class MemoryMapping : noncopyable {
                          off_t length=-1,
                          Options options=Options());
 
+  MemoryMapping(MemoryMapping&&) noexcept;
+
   ~MemoryMapping();
 
-  MemoryMapping(MemoryMapping&& other) noexcept {
-    swap(other);
-  }
-
-  MemoryMapping& operator=(MemoryMapping other) {
-    swap(other);
-    return *this;
-  }
+  MemoryMapping& operator=(MemoryMapping);
 
   void swap(MemoryMapping& other) noexcept;
 
@@ -152,10 +149,9 @@ class MemoryMapping : noncopyable {
 
   /**
    * Hint that these pages will be scanned linearly.
+   * madvise(MADV_SEQUENTIAL)
    */
-  void hintLinearScan() {
-    advise(MADV_SEQUENTIAL);
-  }
+  void hintLinearScan();
 
   /**
    * Advise the kernel about memory access.
@@ -167,7 +163,7 @@ class MemoryMapping : noncopyable {
    * A bitwise cast of the mapped bytes as range of values. Only intended for
    * use with POD or in-place usable types.
    */
-  template<class T>
+  template <class T>
   Range<const T*> asRange() const {
     size_t count = data_.size() / sizeof(T);
     return Range<const T*>(static_cast<const T*>(
@@ -186,7 +182,7 @@ class MemoryMapping : noncopyable {
    * A bitwise cast of the mapped bytes as range of mutable values. Only
    * intended for use with POD or in-place usable types.
    */
-  template<class T>
+  template <class T>
   Range<T*> asWritableRange() const {
     DCHECK(options_.writable);  // you'll segfault anyway...
     size_t count = data_.size() / sizeof(T);
@@ -234,9 +230,7 @@ class MemoryMapping : noncopyable {
   MutableByteRange data_;
 };
 
-inline void swap(MemoryMapping& a, MemoryMapping& b) noexcept {
-  a.swap(b);
-}
+void swap(MemoryMapping&, MemoryMapping&) noexcept;
 
 /**
  * A special case of memcpy() that always copies memory forwards.

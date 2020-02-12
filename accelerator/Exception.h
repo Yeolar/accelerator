@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,7 +47,7 @@ template <class... Args>
 // on error.
 template <class... Args>
 void checkPosixError(int err, Args&&... args) {
-  if (UNLIKELY(err != 0)) {
+  if (ACC_UNLIKELY(err != 0)) {
     throwSystemErrorExplicit(err, std::forward<Args>(args)...);
   }
 }
@@ -56,7 +56,7 @@ void checkPosixError(int err, Args&&... args) {
 // number on error), throw on error.
 template <class... Args>
 void checkKernelError(ssize_t ret, Args&&... args) {
-  if (UNLIKELY(ret < 0)) {
+  if (ACC_UNLIKELY(ret < 0)) {
     throwSystemErrorExplicit(int(-ret), std::forward<Args>(args)...);
   }
 }
@@ -65,14 +65,14 @@ void checkKernelError(ssize_t ret, Args&&... args) {
 // on error.
 template <class... Args>
 void checkUnixError(ssize_t ret, Args&&... args) {
-  if (UNLIKELY(ret == -1)) {
+  if (ACC_UNLIKELY(ret == -1)) {
     throwSystemError(std::forward<Args>(args)...);
   }
 }
 
 template <class... Args>
 void checkUnixErrorExplicit(ssize_t ret, int savedErrno, Args&&... args) {
-  if (UNLIKELY(ret == -1)) {
+  if (ACC_UNLIKELY(ret == -1)) {
     throwSystemErrorExplicit(savedErrno, std::forward<Args>(args)...);
   }
 }
@@ -82,14 +82,14 @@ void checkUnixErrorExplicit(ssize_t ret, int savedErrno, Args&&... args) {
 // freopen, tmpfile, etc.
 template <class... Args>
 void checkFopenError(FILE* fp, Args&&... args) {
-  if (UNLIKELY(!fp)) {
+  if (ACC_UNLIKELY(!fp)) {
     throwSystemError(std::forward<Args>(args)...);
   }
 }
 
 template <class... Args>
 void checkFopenErrorExplicit(FILE* fp, int savedErrno, Args&&... args) {
-  if (UNLIKELY(!fp)) {
+  if (ACC_UNLIKELY(!fp)) {
     throwSystemErrorExplicit(savedErrno, std::forward<Args>(args)...);
   }
 }
@@ -116,8 +116,8 @@ class TracingExceptionBase : public std::exception {
  public:
   template <class... Args>
   explicit TracingExceptionBase(Args&&... args)
-    : msg_(acc::to<std::string>(std::forward<Args>(args)...)) {
-      recordBacktraceToStr(msg_);
+      : msg_(to<std::string>(std::forward<Args>(args)...)) {
+    recordBacktraceToStr(msg_);
   }
 
   virtual ~TracingExceptionBase() {}
@@ -130,8 +130,8 @@ class TracingExceptionBase : public std::exception {
   std::string msg_;
 };
 
-#define ACC_TRACING_EXCEPTION(ex_name) \
-  struct ex_name##Tag {}; \
+#define ACC_TRACING_EXCEPTION(ex_name)                    \
+  struct ex_name##Tag {};                                 \
   typedef acc::TracingExceptionBase<ex_name##Tag> ex_name
 
 #define ACC_TRACING_THROW(E, ...) \

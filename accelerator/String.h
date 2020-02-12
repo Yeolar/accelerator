@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,29 +24,67 @@
 
 #include "accelerator/Conv.h"
 #include "accelerator/Demangle.h"
-#include "accelerator/FBString.h"
 #include "accelerator/Range.h"
+#include "accelerator/ScopeGuard.h"
+#include "accelerator/Traits.h"
 
 #define ACC_PRINTF_FORMAT_ATTR(format_param, dots_param) \
   __attribute__((__format__(__printf__, format_param, dots_param)))
 
 namespace acc {
 
-inline
-std::string toStdString(const fbstring& s) {
-  return std::string(s.data(), s.size());
+/**
+ * C-Escape a string, making it suitable for representation as a C string
+ * literal.  Appends the result to the output string.
+ *
+ * Backslashes all occurrences of backslash and double-quote:
+ *   "  ->  \"
+ *   \  ->  \\
+ *
+ * Replaces all non-printable ASCII characters with backslash-octal
+ * representation:
+ *   <ASCII 254> -> \376
+ *
+ * Note that we use backslash-octal instead of backslash-hex because the octal
+ * representation is guaranteed to consume no more than 3 characters; "\3760"
+ * represents two characters, one with value 254, and one with value 48 ('0'),
+ * whereas "\xfe0" represents only one character (with value 4064, which leads
+ * to implementation-defined behavior).
+ */
+void cEscape(StringPiece str, std::string& out);
+
+/**
+ * Similar to cEscape above, but returns the escaped string.
+ */
+inline std::string cEscape(StringPiece str) {
+  std::string out;
+  cEscape(str, out);
+  return out;
 }
 
-inline
-const std::string& toStdString(const std::string& s) {
-  return s;
-}
+/**
+ * C-Unescape a string; the opposite of cEscape above.  Appends the result
+ * to the output string.
+ *
+ * Recognizes the standard C escape sequences:
+ *
+ * \' \" \? \\ \a \b \f \n \r \t \v
+ * \[0-7]+
+ * \x[0-9a-fA-F]+
+ *
+ * In strict mode (default), throws std::invalid_argument if it encounters
+ * an unrecognized escape sequence.  In non-strict mode, it leaves
+ * the escape sequence unchanged.
+ */
+void cUnescape(StringPiece str, std::string& out, bool strict = true);
 
-// If called with a temporary, the compiler will select this overload instead
-// of the above, so we don't return a (lvalue) reference to a temporary.
-inline
-std::string&& toStdString(std::string&& s) {
-  return std::move(s);
+/**
+ * Similar to cUnescape above, but returns the escaped string.
+ */
+inline std::string cUnescape(StringPiece str, bool strict = true) {
+  std::string out;
+  cUnescape(str, out, strict);
+  return out;
 }
 
 /**
@@ -104,8 +142,10 @@ inline std::string uriUnescape(StringPiece str,
  * resulting string, and the second appends the produced characters to
  * the specified string and returns a reference to it.
  */
-std::string stringPrintf(const char* format, ...) ACC_PRINTF_FORMAT_ATTR(1, 2);
+std::string stringPrintf(const char* format, ...)
+  ACC_PRINTF_FORMAT_ATTR(1, 2);
 
+/* Similar to stringPrintf, with different signature. */
 void stringPrintf(std::string* out, const char* fmt, ...)
   ACC_PRINTF_FORMAT_ATTR(2, 3);
 
@@ -123,41 +163,116 @@ void stringVPrintf(std::string* out, const char* format, va_list ap);
 std::string& stringVAppendf(std::string* out, const char* format, va_list ap);
 
 /**
- * Same functionality as Python's binascii.hexlify.
- * Returns true on successful conversion.
+ * Backslashify a string, that is, replace non-printable characters
+ * with C-style (but NOT C compliant) "\xHH" encoding.  If hex_style
+ * is false, then shorthand notations like "\0" will be used instead
+ * of "\x00" for the most common backslash cases.
+ *
+ * There are two forms, one returning the input string, and one
+ * creating output in the specified output string.
+ *
+ * This is mainly intended for printing to a terminal, so it is not
+ * particularly optimized.
+ *
+ * Do *not* use this in situations where you expect to be able to feed
+ * the string to a C or C++ compiler, as there are nuances with how C
+ * parses such strings that lead to failures.  This is for display
+ * purposed only.  If you want a string you can embed for use in C or
+ * C++, use cEscape instead.  This function is for display purposes
+ * only.
+ */
+void backslashify(
+    acc::StringPiece input,
+    std::string& output,
+    bool hex_style = false);
+
+inline std::string backslashify(StringPiece input, bool hex_style = false) {
+  std::string output;
+  backslashify(input, output, hex_style);
+  return output;
+}
+
+/**
+ * Same functionality as Python's binascii.hexlify.  Returns true
+ * on successful conversion.
  *
  * If append_output is true, append data to the output rather than
  * replace it.
  */
 template <class InputString>
 bool hexlify(const InputString& input, std::string& output,
-             bool append = false);
+             bool append=false);
+
+inline std::string hexlify(ByteRange input) {
+  std::string output;
+  if (!hexlify(input, output)) {
+    // hexlify() currently always returns true, so this can't really happen
+    throw std::runtime_error("hexlify failed");
+  }
+  return output;
+}
+
+inline std::string hexlify(StringPiece input) {
+  return hexlify(ByteRange{input});
+}
 
 /**
- * Same functionality as Python's binascii.unhexlify.
- * Returns true on successful conversion.
+ * Same functionality as Python's binascii.unhexlify.  Returns true
+ * on successful conversion.
  */
 template <class InputString>
 bool unhexlify(const InputString& input, std::string& output);
 
+inline std::string unhexlify(StringPiece input) {
+  std::string output;
+  if (!unhexlify(input, output)) {
+    // unhexlify() fails if the input has non-hexidecimal characters,
+    // or if it doesn't consist of a whole number of bytes
+    throw std::domain_error("unhexlify() called with non-hex input");
+  }
+  return output;
+}
+
 /**
- * Return a fbstring containing the description of the given errno value.
+ * Write a hex dump of size bytes starting at ptr to out.
+ *
+ * The hex dump is formatted as follows:
+ *
+ * for the string "abcdefghijklmnopqrstuvwxyz\x02"
+00000000  61 62 63 64 65 66 67 68  69 6a 6b 6c 6d 6e 6f 70  |abcdefghijklmnop|
+00000010  71 72 73 74 75 76 77 78  79 7a 02                 |qrstuvwxyz.     |
+ *
+ * that is, we write 16 bytes per line, both as hex bytes and as printable
+ * characters.  Non-printable characters are replaced with '.'
+ * Lines are written to out one by one (one StringPiece at a time) without
+ * delimiters.
+ */
+template <class OutIt>
+void hexDump(const void* ptr, size_t size, OutIt out);
+
+/**
+ * Return the hex dump of size bytes starting at ptr as a string.
+ */
+std::string hexDump(const void* ptr, size_t size);
+
+/**
+ * Return a std::string containing the description of the given errno value.
  * Takes care not to overwrite the actual system errno, so calling
  * errnoStr(errno) is valid.
  */
-fbstring errnoStr(int err);
+std::string errnoStr(int err);
 
 /**
  * Debug string for an exception: include type and what(), if
  * defined.
  */
-inline fbstring exceptionStr(const std::exception& e) {
-  return to<fbstring>(demangle(typeid(e)), ": ", e.what());
+inline std::string exceptionStr(const std::exception& e) {
+  return to<std::string>(demangle(typeid(e)), ": ", e.what());
 }
 
 template<typename E>
 auto exceptionStr(const E& e) -> typename std::
-    enable_if<!std::is_base_of<std::exception, E>::value, fbstring>::type {
+    enable_if<!std::is_base_of<std::exception, E>::value, std::string>::type {
   return demangle(typeid(e));
 }
 
@@ -191,35 +306,40 @@ auto exceptionStr(const E& e) -> typename std::
  */
 
 template <class Delim, class String, class OutputType>
-void split(const Delim& delimiter, const String& input,
+void split(const Delim& delimiter,
+           const String& input,
            std::vector<OutputType>& out,
-           bool ignoreEmpty = false);
+           const bool ignoreEmpty = false);
 
-template <class OutputValueType, class Delim, class String,
-          class OutputIterator>
-void splitTo(const Delim& delimiter, const String& input,
+template <
+    class OutputValueType,
+    class Delim,
+    class String,
+    class OutputIterator>
+void splitTo(const Delim& delimiter,
+             const String& input,
              OutputIterator out,
-             bool ignoreEmpty = false);
+             const bool ignoreEmpty = false);
 
 /*
  * Split a string into a fixed number of string pieces and/or numeric types
- * by delimiter. Any numeric type that acc::to<> can convert to from a
- * string piece is supported as a target. Returns 'true' if the fields were
- * all successfully populated.  Returns 'false' if there were too few fields
- * in the input, or too many fields if exact=true.  Casting exceptions will
- * not be caught.
+ * by delimiter. Conversions are supported for any type which acc:to<> can
+ * target, including all overloads of parseTo(). Returns 'true' if the fields
+ * were all successfully populated.  Returns 'false' if there were too few
+ * fields in the input, or too many fields if exact=true.  Casting exceptions
+ * will not be caught.
  *
  * Examples:
  *
  *  acc::StringPiece name, key, value;
  *  if (acc::split('\t', line, name, key, value))
- *  ...
+ *    ...
  *
  *  acc::StringPiece name;
  *  double value;
  *  int id;
  *  if (acc::split('\t', line, name, value, id))
- *  ...
+ *    ...
  *
  * The 'exact' template parameter specifies how the function behaves when too
  * many fields are present in the input string. When 'exact' is set to its
@@ -230,41 +350,31 @@ void splitTo(const Delim& delimiter, const String& input,
  *
  *  acc::StringPiece x, y.
  *  if (acc::split<false>(':', "a:b:c", x, y))
- *  assert(x == "a" && y == "b:c");
+ *    assert(x == "a" && y == "b:c");
  *
  * Note that this will likely not work if the last field's target is of numeric
  * type, in which case acc::to<> will throw an exception.
  */
-template <class T>
-struct IsSplitTargetType {
-  enum {
-    value = std::is_arithmetic<T>::value ||
-        std::is_same<T, StringPiece>::value ||
-        std::is_same<T, std::string>::value
-  };
-};
+namespace detail {
+template <typename Void, typename OutputType>
+struct IsConvertible : std::false_type {};
 
-template <bool exact = true, class Delim, class OutputType,
-          class... OutputTypes>
-typename std::enable_if<IsSplitTargetType<OutputType>::value, bool>::type
-split(const Delim& delimiter, StringPiece input,
-      OutputType& outHead, OutputTypes&... outTail);
+template <typename OutputType>
+struct IsConvertible<
+    void_t<decltype(parseTo(StringPiece{}, std::declval<OutputType&>()))>,
+    OutputType> : std::true_type {};
+} // namespace detail
+template <typename OutputType>
+struct IsConvertible : detail::IsConvertible<void, OutputType> {};
+
+template <bool exact = true, class Delim, class... OutputTypes>
+typename std::enable_if<
+    StrictConjunction<IsConvertible<OutputTypes>...>::value &&
+        sizeof...(OutputTypes) >= 1,
+    bool>::type
+split(const Delim& delimiter, StringPiece input, OutputTypes&... outputs);
 
 /*
- * Similar to split(), but split for any char matching of delimiters.
- */
-template <class Delim, class String, class OutputType>
-void splitAny(const Delim& delimiters, const String& input,
-              std::vector<OutputType>& out,
-              bool ignoreEmpty = false);
-
-template <class OutputValueType, class Delim, class String,
-          class OutputIterator>
-void splitAnyTo(const Delim& delimiters, const String& input,
-                OutputIterator out,
-                bool ignoreEmpty = false);
-
-/**
  * Join list of tokens.
  *
  * Stores a string representation of tokens in the same order with
@@ -272,23 +382,28 @@ void splitAnyTo(const Delim& delimiters, const String& input,
  */
 
 template <class Delim, class Iterator>
-void join(const Delim& delimiter, Iterator begin, Iterator end,
+void join(const Delim& delimiter,
+          Iterator begin,
+          Iterator end,
           std::string& output);
 
 template <class Delim, class Container>
-void join(const Delim& delimiter, const Container& container,
+void join(const Delim& delimiter,
+          const Container& container,
           std::string& output) {
   join(delimiter, container.begin(), container.end(), output);
 }
 
 template <class Delim, class Value>
-void join(const Delim& delimiter, const std::initializer_list<Value>& values,
+void join(const Delim& delimiter,
+          const std::initializer_list<Value>& values,
           std::string& output) {
   join(delimiter, values.begin(), values.end(), output);
 }
 
 template <class Delim, class Container>
-std::string join(const Delim& delimiter, const Container& container) {
+std::string join(const Delim& delimiter,
+                 const Container& container) {
   std::string output;
   join(delimiter, container.begin(), container.end(), output);
   return output;
@@ -302,7 +417,13 @@ std::string join(const Delim& delimiter,
   return output;
 }
 
-template <class Delim, class Iterator>
+template <
+    class Delim,
+    class Iterator,
+    typename std::enable_if<std::is_base_of<
+        std::forward_iterator_tag,
+        typename std::iterator_traits<Iterator>::iterator_category>::value>::
+        type* = nullptr>
 std::string join(const Delim& delimiter, Iterator begin, Iterator end) {
   std::string output;
   join(delimiter, begin, end, output);
@@ -310,12 +431,15 @@ std::string join(const Delim& delimiter, Iterator begin, Iterator end) {
 }
 
 template <class Delim, class Iterator>
-void joinMap(const Delim& delimiter, const Delim& pairDelimiter,
-             Iterator begin, Iterator end,
+void joinMap(const Delim& delimiter,
+             const Delim& pairDelimiter,
+             Iterator begin,
+             Iterator end,
              std::string& output);
 
 template <class Delim, class Container>
-std::string joinMap(const Delim& delimiter, const Delim& pairDelimiter,
+std::string joinMap(const Delim& delimiter,
+                    const Delim& pairDelimiter,
                     const Container& container) {
   std::string output;
   joinMap(delimiter, pairDelimiter, container.begin(), container.end(), output);
@@ -323,27 +447,29 @@ std::string joinMap(const Delim& delimiter, const Delim& pairDelimiter,
 }
 
 template <class Delim, class Iterator>
-std::string joinMap(const Delim& delimiter, const Delim& pairDelimiter,
-                    Iterator begin, Iterator end) {
+std::string joinMap(const Delim& delimiter,
+                    const Delim& pairDelimiter,
+                    Iterator begin,
+                    Iterator end) {
   std::string output;
   joinMap(delimiter, pairDelimiter, begin, end, output);
   return output;
 }
 
 /**
- * Returns a subpiece with all whitespace removed from the front.
+ * Returns a subpiece with all whitespace removed from the front of @sp.
  * Whitespace means any of [' ', '\n', '\r', '\t'].
  */
 StringPiece ltrimWhitespace(StringPiece sp);
 
 /**
- * Returns a subpiece with all whitespace removed from the back.
+ * Returns a subpiece with all whitespace removed from the back of @sp.
  * Whitespace means any of [' ', '\n', '\r', '\t'].
  */
 StringPiece rtrimWhitespace(StringPiece sp);
 
 /**
- * Returns a subpiece with all whitespace removed from the back and front.
+ * Returns a subpiece with all whitespace removed from the back and front of @sp.
  * Whitespace means any of [' ', '\n', '\r', '\t'].
  */
 inline StringPiece trimWhitespace(StringPiece sp) {
@@ -355,21 +481,17 @@ inline StringPiece trimWhitespace(StringPiece sp) {
  * Leaves all other characters unchanged, including those with the 0x80
  * bit set.
  * @param str String to convert
- * @param len Length of str, in bytes
+ * @param length Length of str, in bytes
  */
 void toLowerAscii(char* str, size_t length);
 
-template <class String>
-void toLowerAscii(String& s) {
-  for (auto& c : s) {
-    c = tolower(c);
-  }
+inline void toLowerAscii(MutableStringPiece str) {
+  toLowerAscii(str.begin(), str.size());
 }
 
-inline std::string toLowerAscii(StringPiece sp) {
-  std::string out = sp.str();
-  toLowerAscii(out);
-  return out;
+inline void toLowerAscii(std::string& str) {
+  // str[0] is legal also if the string is empty.
+  toLowerAscii(&str[0], str.size());
 }
 
 } // namespace acc

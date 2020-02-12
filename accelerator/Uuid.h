@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,18 +19,7 @@
 
 #include <array>
 #include <cstdint>
-#include <cstring>
 #include <string>
-
-/* UUID Variant definitions */
-#define UUID_VARIANT_NCS 0
-#define UUID_VARIANT_DCE 1
-#define UUID_VARIANT_MICROSOFT 2
-#define UUID_VARIANT_OTHER 3
-
-/* UUID Type definitions */
-#define UUID_TYPE_DCE_TIME 1
-#define UUID_TYPE_DCE_RANDOM 4
 
 namespace acc {
 
@@ -41,27 +30,15 @@ class Uuid {
   std::string generateTime();
 
  private:
-  int generateTime(uuid_t out);
+  int generateTime(value_type& out);
 
   value_type uuid_;
 };
 
-typedef unsigned char uuid_t[16];
-
-void uuidPack(const struct uuid *uu, uuid_t ptr);
-void uuidUnpack(const uuid_t in, struct uuid *uu);
-
-inline void uuidClear(uuid_t uu) {
-  memset(uu, 0, 16);
-}
-
-int uuidGenerateTime(uuid_t out);
-
-std::string uuidGenerateTime();
-
 inline std::string generateUuid(const std::string& upstreamUuid,
                                 const std::string& prefix) {
-  return upstreamUuid.empty() ? prefix + ':' + uuidGenerateTime()
+  Uuid uuid;
+  return upstreamUuid.empty() ? prefix + ':' + uuid.generateTime()
                               : upstreamUuid;
 }
 

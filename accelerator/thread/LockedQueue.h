@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,16 +22,22 @@
 
 namespace acc {
 
-template <class T>
+template <class T, class Queue = std::queue<T>>
 class LockedQueue {
  public:
+  typedef typename Queue::value_type value_type;
+
   LockedQueue() {}
 
-  void push(T value) {
+  void push(const value_type& value) {
+    queue_.wlock()->push(value);
+  }
+
+  void push(value_type&& value) {
     queue_.wlock()->push(std::move(value));
   }
 
-  bool pop(T& value) {
+  bool pop(value_type& value) {
     auto ulockedQueue = queue_.ulock();
     if (!ulockedQueue->empty()) {
       auto wlockedQueue = ulockedQueue.moveFromUpgradeToWrite();
@@ -46,8 +52,12 @@ class LockedQueue {
     return queue_.rlock()->size();
   }
 
+  bool empty() const {
+    return queue_.rlock()->empty();
+  }
+
  private:
-  Synchronized<std::queue<T>> queue_;
+  Synchronized<Queue> queue_;
 };
 
 } // namespace acc

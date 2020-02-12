@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,8 +29,13 @@ bool base64Encode(const InputString& input,
   auto encode = [&](unsigned int i) -> char {
     static char kBase64EncTable[] =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    if (UNLIKELY(i == 0x3e)) return mode == Base64EncodeMode::URI ? '-' : '+';
-    if (UNLIKELY(i == 0x3f)) return mode == Base64EncodeMode::URI ? '_' : '/';
+
+    if (ACC_UNLIKELY(i == 0x3e)) {
+      return mode == Base64EncodeMode::URI ? '-' : '+';
+    }
+    if (ACC_UNLIKELY(i == 0x3f)) {
+      return mode == Base64EncodeMode::URI ? '_' : '/';
+    }
     return kBase64EncTable[i];
   };
 

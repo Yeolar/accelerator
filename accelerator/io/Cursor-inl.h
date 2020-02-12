@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -61,7 +61,7 @@ std::string CursorBase<Derived, BufType>::readTerminatedString(
   auto result = readWhile(keepReading);
   // skip over the terminator character
   if (isAtEnd()) {
-    std::__throw_out_of_range("terminator not found");
+    throw std::out_of_range("terminator not found");
   }
   skip(1);
 
@@ -106,7 +106,6 @@ void CursorBase<Derived, BufType>::skipWhile(const Predicate& predicate) {
   CursorNoopAppender appender;
   readWhile(predicate, appender);
 }
-
 } // namespace detail
 } // namespace io
 } // namespace acc

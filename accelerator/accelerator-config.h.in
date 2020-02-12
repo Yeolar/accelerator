@@ -7,12 +7,28 @@
 
 /* compile tests for keyword, lib, function, ... */
 
+#cmakedefine ACC_HAVE_WEAK_SYMBOLS 1
 #cmakedefine ACC_HAVE_XSI_STRERROR_R 1
+
+#cmakedefine ACC_HAVE_MEMRCHR 1
+#cmakedefine ACC_HAVE_PIPE2 1
+#cmakedefine ACC_HAVE_PREADV 1
+#cmakedefine ACC_HAVE_PWRITEV 1
 
 /* gflags */
 
 #cmakedefine ACC_GFLAGS_NAMESPACE @ACC_GFLAGS_NAMESPACE@
 #cmakedefine ACC_UNUSUAL_GFLAGS_NAMESPACE 1
 
-/* monitor */
-#cmakedefine ACC_MON_ENABLE 1
+/* gtest */
+
+#cmakedefine ACC_HAVE_LIBGTEST 1
+
+/* compression */
+
+#cmakedefine ACC_HAVE_LIBBZ2 1
+#cmakedefine ACC_HAVE_LIBLZ4 1
+#cmakedefine ACC_HAVE_LIBLZMA 1
+#cmakedefine ACC_HAVE_LIBSNAPPY 1
+#cmakedefine ACC_HAVE_LIBZ 1
+#cmakedefine ACC_HAVE_LIBZSTD 1

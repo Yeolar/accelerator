@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,6 +38,7 @@ namespace acc {
 template <class T>
 class TypedIOBuf {
   static_assert(std::is_standard_layout<T>::value, "must be standard layout");
+
  public:
   typedef T value_type;
   typedef value_type& reference;
@@ -46,7 +47,7 @@ class TypedIOBuf {
   typedef value_type* iterator;
   typedef const value_type* const_iterator;
 
-  explicit TypedIOBuf(IOBuf* buf) : buf_(buf) { }
+  explicit TypedIOBuf(IOBuf* buf) : buf_(buf) {}
 
   IOBuf* ioBuf() {
     return buf_;
@@ -73,7 +74,9 @@ class TypedIOBuf {
   uint32_t length() const {
     return sdiv(buf_->length());
   }
-  uint32_t size() const { return length(); }
+  uint32_t size() const {
+    return length();
+  }
 
   uint32_t headroom() const {
     return sdiv(buf_->headroom());
@@ -117,14 +120,28 @@ class TypedIOBuf {
   void reserve(uint32_t minHeadroom, uint32_t minTailroom) {
     buf_->reserve(smul(minHeadroom), smul(minTailroom));
   }
-  void reserve(uint32_t minTailroom) { reserve(0, minTailroom); }
+  void reserve(uint32_t minTailroom) {
+    reserve(0, minTailroom);
+  }
 
-  const T* cbegin() const { return data(); }
-  const T* cend() const { return tail(); }
-  const T* begin() const { return cbegin(); }
-  const T* end() const { return cend(); }
-  T* begin() { return writableData(); }
-  T* end() { return writableTail(); }
+  const T* cbegin() const {
+    return data();
+  }
+  const T* cend() const {
+    return tail();
+  }
+  const T* begin() const {
+    return cbegin();
+  }
+  const T* end() const {
+    return cend();
+  }
+  T* begin() {
+    return writableData();
+  }
+  T* end() {
+    return writableTail();
+  }
 
   const T& front() const {
     assert(!empty());
@@ -144,7 +161,8 @@ class TypedIOBuf {
   }
 
   /**
-   * Simple wrapper to make it easier to treat this TypedIOBuf as an array of T.
+   * Simple wrapper to make it easier to treat this TypedIOBuf as an array of
+   * T.
    */
   const T& operator[](ssize_t idx) const {
     assert(idx >= 0 && idx < length());
@@ -162,7 +180,9 @@ class TypedIOBuf {
   void push(const T& data) {
     push(&data, &data + 1);
   }
-  void push_back(const T& data) { push(data); }
+  void push_back(const T& data) {
+    push(data);
+  }
 
   /**
    * Append multiple elements in a sequence; will call distance().

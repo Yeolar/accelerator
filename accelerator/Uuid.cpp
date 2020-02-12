@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,8 @@
 
 #include "accelerator/Uuid.h"
 
+#include <cstring>
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -26,7 +28,19 @@
 #include "accelerator/Random.h"
 #include "accelerator/String.h"
 
+/* UUID Variant definitions */
+#define UUID_VARIANT_NCS 0
+#define UUID_VARIANT_DCE 1
+#define UUID_VARIANT_MICROSOFT 2
+#define UUID_VARIANT_OTHER 3
+
+/* UUID Type definitions */
+#define UUID_TYPE_DCE_TIME 1
+#define UUID_TYPE_DCE_RANDOM 4
+
 namespace acc {
+
+namespace detail {
 
 struct uuid {
   uint32_t time_low;
@@ -85,10 +99,15 @@ void uuidUnpack(const Uuid::value_type& in, struct uuid* uu) {
   memcpy(uu->node, in.data() + i, 6);
 }
 
+void uuidClear(Uuid::value_type& uu) {
+  memset(uu.data(), 0, 16);
+}
+
 /*
  * Get the ethernet hardware address, if we can find it...
  */
 static int getNodeId(unsigned char *node_id) {
+#if __linux__
   int sd;
   struct ifreq ifr, *ifrp;
   struct ifconf ifc;
@@ -124,6 +143,9 @@ static int getNodeId(unsigned char *node_id) {
   }
   close(sd);
   return 0;
+#else
+  return -1;
+#endif
 }
 
 /* Assume that the gettimeofday() has microsecond granularity */
@@ -184,7 +206,7 @@ try_again:
   return -1;  /* compatible with libuuid */
 }
 
-int internalUuidGenerateTime(uuid_t out, int *num) {
+int internalUuidGenerateTime(Uuid::value_type& out, int *num) {
   static unsigned char node_id[6];
   static int has_init = 0;
   struct uuid uu;
@@ -212,12 +234,14 @@ int internalUuidGenerateTime(uuid_t out, int *num) {
   return ret;
 }
 
+} // namespace detail
+
 /*
  * Generate time-based UUID and store it to @out
  */
-int uuidGenerateTime(uuid_t out) {
+int Uuid::generateTime(value_type& out) {
   static __thread int num = 0;
-  static __thread struct uuid uu;
+  static __thread struct detail::uuid uu;
   static __thread time_t last_time = 0;
   time_t now;
 
@@ -241,13 +265,13 @@ int uuidGenerateTime(uuid_t out) {
     return 0;
   }
 
-  return internalUuidGenerateTime(out, 0);
+  return detail::internalUuidGenerateTime(out, 0);
 }
 
 std::string Uuid::generateTime() {
   std::string out;
 
-  uuidGenerateTime(uuid_);
+  generateTime(uuid_);
 
   StringPiece sp((char*)uuid_.data(), uuid_.size());
   hexlify(sp.subpiece(0, 4), out, true); sp.advance(4), out += '-';

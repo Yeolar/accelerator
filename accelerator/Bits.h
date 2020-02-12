@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,12 +45,14 @@
 
 #pragma once
 
+#include <cassert>
 #include <cinttypes>
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <type_traits>
 
-#include "accelerator/ConstexprMath.h"
+#include "accelerator/Constexpr.h"
 #include "accelerator/Traits.h"
 
 namespace acc {
@@ -170,7 +172,7 @@ namespace detail {
 template <size_t Size>
 struct uint_types_by_size;
 
-#define ACC_GEN(sz, fn)                                      \
+#define ACC_GEN(sz, fn)                                     \
   static inline uint##sz##_t byteswap_gen(uint##sz##_t v) { \
     return fn(v);                                           \
   }                                                         \
@@ -291,6 +293,42 @@ inline T loadUnaligned(const void* p) {
 }
 
 /**
+ * Read l bytes into the low bits of a value of an unsigned integral
+ * type T, where l < sizeof(T).
+ *
+ * This is intended as a complement to loadUnaligned to read the tail
+ * of a buffer when it is processed one word at a time.
+ */
+template <class T>
+inline T partialLoadUnaligned(const void* p, size_t l) {
+  static_assert(
+      std::is_integral<T>::value && std::is_unsigned<T>::value &&
+          sizeof(T) <= 8,
+      "Invalid type");
+  auto cp = static_cast<const char*>(p);
+  T value = 0;
+  if (!kIsLittleEndian) {
+    // Unsupported, use memcpy.
+    memcpy(&value, cp, l);
+    return value;
+  }
+
+  auto avail = l;
+  if (l & 4) {
+    avail -= 4;
+    value = static_cast<T>(loadUnaligned<uint32_t>(cp + avail)) << (avail * 8);
+  }
+  if (l & 2) {
+    avail -= 2;
+    value |= static_cast<T>(loadUnaligned<uint16_t>(cp + avail)) << (avail * 8);
+  }
+  if (l & 1) {
+    value |= loadUnaligned<uint8_t>(cp);
+  }
+  return value;
+}
+
+/**
  * Write an unaligned value of type T.
  */
 template <class T>
@@ -298,6 +336,15 @@ inline void storeUnaligned(void* p, T value) {
   static_assert(sizeof(Unaligned<T>) == sizeof(T), "Invalid unaligned size");
   static_assert(alignof(Unaligned<T>) == 1, "Invalid alignment");
   new (p) Unaligned<T>(value);
+}
+
+template <typename T>
+T bitReverse(T n) {
+  auto m = static_cast<typename std::make_unsigned<T>::type>(n);
+  m = ((m & 0xAAAAAAAAAAAAAAAA) >> 1) | ((m & 0x5555555555555555) << 1);
+  m = ((m & 0xCCCCCCCCCCCCCCCC) >> 2) | ((m & 0x3333333333333333) << 2);
+  m = ((m & 0xF0F0F0F0F0F0F0F0) >> 4) | ((m & 0x0F0F0F0F0F0F0F0F) << 4);
+  return static_cast<T>(Endian::swap(m));
 }
 
 } // namespace acc

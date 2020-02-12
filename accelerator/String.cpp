@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,14 +17,153 @@
 
 #include "accelerator/String.h"
 
-#include <array>
+#include <cctype>
+#include <cerrno>
+#include <cstdarg>
 #include <cstring>
-#include <memory>
+#include <iterator>
+#include <sstream>
 #include <stdexcept>
 
+#include "accelerator/Array.h"
+#include "accelerator/Logging.h"
 #include "accelerator/ScopeGuard.h"
 
 namespace acc {
+
+static_assert(IsConvertible<float>::value, "");
+static_assert(IsConvertible<int>::value, "");
+static_assert(IsConvertible<bool>::value, "");
+static_assert(IsConvertible<int>::value, "");
+static_assert(!IsConvertible<std::vector<int>>::value, "");
+
+namespace detail {
+// Map from character code to value of one-character escape sequence
+// ('\n' = 10 maps to 'n'), 'O' if the character should be printed as
+// an octal escape sequence, or 'P' if the character is printable and
+// should be printed as is.
+extern const std::array<char, 256> cEscapeTable;
+} // namespace detail
+
+void cEscape(StringPiece str, std::string& out) {
+  char esc[4];
+  esc[0] = '\\';
+  out.reserve(out.size() + str.size());
+  auto p = str.begin();
+  auto last = p;  // last regular character
+  // We advance over runs of regular characters (printable, not double-quote or
+  // backslash) and copy them in one go; this is faster than calling push_back
+  // repeatedly.
+  while (p != str.end()) {
+    char c = *p;
+    unsigned char v = static_cast<unsigned char>(c);
+    char e = detail::cEscapeTable[v];
+    if (e == 'P') {  // printable
+      ++p;
+    } else if (e == 'O') {  // octal
+      out.append(&*last, size_t(p - last));
+      esc[1] = '0' + ((v >> 6) & 7);
+      esc[2] = '0' + ((v >> 3) & 7);
+      esc[3] = '0' + (v & 7);
+      out.append(esc, 4);
+      ++p;
+      last = p;
+    } else {  // special 1-character escape
+      out.append(&*last, size_t(p - last));
+      esc[1] = e;
+      out.append(esc, 2);
+      ++p;
+      last = p;
+    }
+  }
+  out.append(&*last, size_t(p - last));
+}
+
+namespace detail {
+// Map from the character code of the character following a backslash to
+// the unescaped character if a valid one-character escape sequence
+// ('n' maps to 10 = '\n'), 'O' if this is the first character of an
+// octal escape sequence, 'X' if this is the first character of a
+// hexadecimal escape sequence, or 'I' if this escape sequence is invalid.
+extern const std::array<char, 256> cUnescapeTable;
+} // namespace detail
+
+void cUnescape(StringPiece str, std::string& out, bool strict) {
+  out.reserve(out.size() + str.size());
+  auto p = str.begin();
+  auto last = p;  // last regular character (not part of an escape sequence)
+  // We advance over runs of regular characters (not backslash) and copy them
+  // in one go; this is faster than calling push_back repeatedly.
+  while (p != str.end()) {
+    char c = *p;
+    if (c != '\\') {  // normal case
+      ++p;
+      continue;
+    }
+    out.append(&*last, p - last);
+    ++p;
+    if (p == str.end()) {  // backslash at end of string
+      if (strict) {
+        throw std::invalid_argument("incomplete escape sequence");
+      }
+      out.push_back('\\');
+      last = p;
+      continue;
+    }
+    char e = detail::cUnescapeTable[static_cast<unsigned char>(*p)];
+    if (e == 'O') {  // octal
+      unsigned char val = 0;
+      for (int i = 0; i < 3 && p != str.end() && *p >= '0' && *p <= '7';
+           ++i, ++p) {
+        val = (val << 3) | (*p - '0');
+      }
+      out.push_back(val);
+      last = p;
+    } else if (e == 'X') {  // hex
+      ++p;
+      if (p == str.end()) {  // \x at end of string
+        if (strict) {
+          throw std::invalid_argument("incomplete hex escape sequence");
+        }
+        out.append("\\x");
+        last = p;
+        continue;
+      }
+      unsigned char val = 0;
+      unsigned char h;
+      for (; (p != str.end() &&
+              (h = detail::hexTable[static_cast<unsigned char>(*p)]) < 16);
+           ++p) {
+        val = (val << 4) | h;
+      }
+      out.push_back(val);
+      last = p;
+    } else if (e == 'I') {  // invalid
+      if (strict) {
+        throw std::invalid_argument("invalid escape sequence");
+      }
+      out.push_back('\\');
+      out.push_back(*p);
+      ++p;
+      last = p;
+    } else {  // standard escape sequence, \' etc
+      out.push_back(e);
+      ++p;
+      last = p;
+    }
+  }
+  out.append(&*last, p - last);
+}
+
+namespace detail {
+// Map from character code to escape mode:
+// 0 = pass through
+// 1 = unused
+// 2 = pass through in PATH mode
+// 3 = space, replace with '+' in QUERY mode
+// 4 = percent-encode
+extern const std::array<unsigned char, 256> uriEscapeTable;
+} // namespace detail
 
 void uriEscape(StringPiece str, std::string& out, UriEscapeMode mode) {
   static const char hexValues[] = "0123456789abcdef";
@@ -41,7 +180,7 @@ void uriEscape(StringPiece str, std::string& out, UriEscapeMode mode) {
     char c = *p;
     unsigned char v = static_cast<unsigned char>(c);
     unsigned char discriminator = detail::uriEscapeTable[v];
-    if (LIKELY(discriminator <= minEncode)) {
+    if (ACC_LIKELY(discriminator <= minEncode)) {
       ++p;
     } else if (mode == UriEscapeMode::QUERY && discriminator == 3) {
       out.append(&*last, size_t(p - last));
@@ -71,12 +210,12 @@ void uriUnescape(StringPiece str, std::string& out, UriEscapeMode mode) {
     switch (c) {
     case '%':
       {
-        if (UNLIKELY(std::distance(p, str.end()) < 3)) {
+        if (ACC_UNLIKELY(std::distance(p, str.end()) < 3)) {
           throw std::invalid_argument("incomplete percent encode sequence");
         }
         auto h1 = detail::hexTable[static_cast<unsigned char>(p[1])];
         auto h2 = detail::hexTable[static_cast<unsigned char>(p[2])];
-        if (UNLIKELY(h1 == 16 || h2 == 16)) {
+        if (ACC_UNLIKELY(h1 == 16 || h2 == 16)) {
           throw std::invalid_argument("invalid percent encode sequence");
         }
         out.append(&*last, size_t(p - last));
@@ -93,6 +232,8 @@ void uriUnescape(StringPiece str, std::string& out, UriEscapeMode mode) {
         last = p;
         break;
       }
+      // else fallthrough
+      ACC_FALLTHROUGH;
     default:
       ++p;
       break;
@@ -101,9 +242,137 @@ void uriUnescape(StringPiece str, std::string& out, UriEscapeMode mode) {
   out.append(&*last, size_t(p - last));
 }
 
+namespace detail {
+
+struct string_table_c_escape_make_item {
+  constexpr char operator()(std::size_t index) const {
+    // clang-format off
+    return
+        index == '"' ? '"' :
+        index == '\\' ? '\\' :
+        index == '?' ? '?' :
+        index == '\n' ? 'n' :
+        index == '\r' ? 'r' :
+        index == '\t' ? 't' :
+        index < 32 || index > 126 ? 'O' : // octal
+        'P'; // printable
+    // clang-format on
+  }
+};
+
+struct string_table_c_unescape_make_item {
+  constexpr char operator()(std::size_t index) const {
+    // clang-format off
+    return
+        index == '\'' ? '\'' :
+        index == '?' ? '?' :
+        index == '\\' ? '\\' :
+        index == '"' ? '"' :
+        index == 'a' ? '\a' :
+        index == 'b' ? '\b' :
+        index == 'f' ? '\f' :
+        index == 'n' ? '\n' :
+        index == 'r' ? '\r' :
+        index == 't' ? '\t' :
+        index == 'v' ? '\v' :
+        index >= '0' && index <= '7' ? 'O' : // octal
+        index == 'x' ? 'X' : // hex
+        'I'; // invalid
+    // clang-format on
+  }
+};
+
+struct string_table_hex_make_item {
+  constexpr unsigned char operator()(std::size_t index) const {
+    // clang-format off
+    return
+        index >= '0' && index <= '9' ? index - '0' :
+        index >= 'a' && index <= 'f' ? index - 'a' + 10 :
+        index >= 'A' && index <= 'F' ? index - 'A' + 10 :
+        16;
+    // clang-format on
+  }
+};
+
+struct string_table_uri_escape_make_item {
+  //  0 = passthrough
+  //  1 = unused
+  //  2 = safe in path (/)
+  //  3 = space (replace with '+' in query)
+  //  4 = always percent-encode
+  constexpr unsigned char operator()(std::size_t index) const {
+    // clang-format off
+    return
+        index >= '0' && index <= '9' ? 0 :
+        index >= 'A' && index <= 'Z' ? 0 :
+        index >= 'a' && index <= 'z' ? 0 :
+        index == '-' ? 0 :
+        index == '_' ? 0 :
+        index == '.' ? 0 :
+        index == '~' ? 0 :
+        index == '/' ? 2 :
+        index == ' ' ? 3 :
+        4;
+    // clang-format on
+  }
+};
+
+constexpr decltype(cEscapeTable) cEscapeTable =
+    make_array_with<256>(string_table_c_escape_make_item{});
+constexpr decltype(cUnescapeTable) cUnescapeTable =
+    make_array_with<256>(string_table_c_unescape_make_item{});
+constexpr decltype(hexTable) hexTable =
+    make_array_with<256>(string_table_hex_make_item{});
+constexpr decltype(uriEscapeTable) uriEscapeTable =
+    make_array_with<256>(string_table_uri_escape_make_item{});
+
+} // namespace detail
+
+static inline bool is_oddspace(char c) {
+  return c == '\n' || c == '\t' || c == '\r';
+}
+
+StringPiece ltrimWhitespace(StringPiece sp) {
+  // Spaces other than ' ' characters are less common but should be
+  // checked.  This configuration where we loop on the ' '
+  // separately from oddspaces was empirically fastest.
+
+  while (true) {
+    while (!sp.empty() && sp.front() == ' ') {
+      sp.pop_front();
+    }
+    if (!sp.empty() && is_oddspace(sp.front())) {
+      sp.pop_front();
+      continue;
+    }
+
+    return sp;
+  }
+}
+
+StringPiece rtrimWhitespace(StringPiece sp) {
+  // Spaces other than ' ' characters are less common but should be
+  // checked.  This configuration where we loop on the ' '
+  // separately from oddspaces was empirically fastest.
+
+  while (true) {
+    while (!sp.empty() && sp.back() == ' ') {
+      sp.pop_back();
+    }
+    if (!sp.empty() && is_oddspace(sp.back())) {
+      sp.pop_back();
+      continue;
+    }
+
+    return sp;
+  }
+}
+
 namespace {
 
-int stringAppendfImplHelper(char* buf, size_t bufsize, const char* format,
+int stringAppendfImplHelper(char* buf,
+                            size_t bufsize,
+                            const char* format,
                             va_list args) {
   va_list args_copy;
   va_copy(args_copy, args);
@@ -126,41 +395,41 @@ void stringAppendfImpl(std::string& output, const char* format, va_list args) {
   std::array<char, 128> inline_buffer;
 
   int bytes_used = stringAppendfImplHelper(
-    inline_buffer.data(), inline_buffer.size(), format, args);
+      inline_buffer.data(), inline_buffer.size(), format, args);
   if (bytes_used < 0) {
-    throw std::runtime_error(
-      std::string(
+    throw std::runtime_error(to<std::string>(
         "Invalid format string; snprintf returned negative "
-        "with format string: ") + format);
+        "with format string: ",
+        format));
   }
 
   if (static_cast<size_t>(bytes_used) < inline_buffer.size()) {
-    output.append(inline_buffer.data(), bytes_used);
+    output.append(inline_buffer.data(), size_t(bytes_used));
     return;
   }
 
   // Couldn't fit.  Heap allocate a buffer, oh well.
-  std::unique_ptr<char[]> heap_buffer(new char[bytes_used + 1]);
+  std::unique_ptr<char[]> heap_buffer(new char[size_t(bytes_used + 1)]);
   int final_bytes_used = stringAppendfImplHelper(
-    heap_buffer.get(), bytes_used + 1, format, args);
+      heap_buffer.get(), size_t(bytes_used + 1), format, args);
   // The second call can take fewer bytes if, for example, we were printing a
   // string buffer with null-terminating char using a width specifier -
   // vsnprintf("%.*s", buf.size(), buf)
-  assert(bytes_used >= final_bytes_used);
+  ACCCHECK(bytes_used >= final_bytes_used);
 
   // We don't keep the trailing '\0' in our output string
-  output.append(heap_buffer.get(), final_bytes_used);
+  output.append(heap_buffer.get(), size_t(final_bytes_used));
 }
 
 } // namespace
 
 std::string stringPrintf(const char* format, ...) {
-  std::string ret;
   va_list ap;
   va_start(ap, format);
-  stringAppendfImpl(ret, format, ap);
-  va_end(ap);
-  return ret;
+  SCOPE_EXIT {
+    va_end(ap);
+  };
+  return stringVPrintf(format, ap);
 }
 
 std::string stringVPrintf(const char* format, va_list ap) {
@@ -174,23 +443,26 @@ std::string stringVPrintf(const char* format, va_list ap) {
 std::string& stringAppendf(std::string* output, const char* format, ...) {
   va_list ap;
   va_start(ap, format);
-  stringAppendfImpl(*output, format, ap);
-  va_end(ap);
-  return *output;
+  SCOPE_EXIT {
+    va_end(ap);
+  };
+  return stringVAppendf(output, format, ap);
 }
 
-std::string& stringVAppendf(std::string* output, const char* format,
+std::string& stringVAppendf(std::string* output,
+                            const char* format,
                             va_list ap) {
   stringAppendfImpl(*output, format, ap);
   return *output;
 }
 
 void stringPrintf(std::string* output, const char* format, ...) {
-  output->clear();
   va_list ap;
   va_start(ap, format);
-  stringAppendfImpl(*output, format, ap);
-  va_end(ap);
+  SCOPE_EXIT {
+    va_end(ap);
+  };
+  return stringVPrintf(output, format, ap);
 }
 
 void stringVPrintf(std::string* output, const char* format, va_list ap) {
@@ -198,7 +470,57 @@ void stringVPrintf(std::string* output, const char* format, va_list ap) {
   stringAppendfImpl(*output, format, ap);
 };
 
-fbstring errnoStr(int err) {
+void backslashify(
+    acc::StringPiece input,
+    std::string& output,
+    bool hex_style) {
+  static const char hexValues[] = "0123456789abcdef";
+  output.clear();
+  output.reserve(3 * input.size());
+  for (unsigned char c : input) {
+    // less than space or greater than '~' are considered unprintable
+    if (c < 0x20 || c > 0x7e || c == '\\') {
+      bool hex_append = false;
+      output.push_back('\\');
+      if (hex_style) {
+        hex_append = true;
+      } else {
+        if (c == '\r') {
+          output += 'r';
+        } else if (c == '\n') {
+          output += 'n';
+        } else if (c == '\t') {
+          output += 't';
+        } else if (c == '\a') {
+          output += 'a';
+        } else if (c == '\b') {
+          output += 'b';
+        } else if (c == '\0') {
+          output += '0';
+        } else if (c == '\\') {
+          output += '\\';
+        } else {
+          hex_append = true;
+        }
+      }
+      if (hex_append) {
+        output.push_back('x');
+        output.push_back(hexValues[(c >> 4) & 0xf]);
+        output.push_back(hexValues[c & 0xf]);
+      }
+    } else {
+      output += c;
+    }
+  }
+}
+
+std::string hexDump(const void* ptr, size_t size) {
+  std::ostringstream os;
+  hexDump(ptr, size, std::ostream_iterator<StringPiece>(os, "\n"));
+  return os.str();
+}
+
+std::string errnoStr(int err) {
   int savedErrno = errno;
 
   // Ensure that we reset errno upon exit.
@@ -207,7 +529,7 @@ fbstring errnoStr(int err) {
   char buf[1024];
   buf[0] = '\0';
 
-  fbstring result;
+  std::string result;
 
   // https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man3/strerror_r.3.html
   // http://www.kernel.org/doc/man-pages/online/pages/man3/strerror.3.html
@@ -218,8 +540,9 @@ fbstring errnoStr(int err) {
 
   // OSX/FreeBSD use EINVAL and Linux uses -1 so just check for non-zero
   if (r != 0) {
-    result = to<fbstring>(
-      "Unknown error ", err, " (strerror_r failed with error ", errno, ")");
+    result = to<std::string>(
+      "Unknown error ", err,
+      " (strerror_r failed with error ", errno, ")");
   } else {
     result.assign(buf);
   }
@@ -229,42 +552,6 @@ fbstring errnoStr(int err) {
 #endif
 
   return result;
-}
-
-static inline bool is_oddspace(char c) {
-  return c == '\n' || c == '\t' || c == '\r';
-}
-
-StringPiece ltrimWhitespace(StringPiece sp) {
-// Spaces other than ' ' characters are less common but should be
-// checked.  This configuration where we loop on the ' '
-// separately from oddspaces was empirically fastest.
-
-loop:
-  for (; !sp.empty() && sp.front() == ' '; sp.pop_front()) {
-  }
-  if (!sp.empty() && is_oddspace(sp.front())) {
-    sp.pop_front();
-    goto loop;
-  }
-
-  return sp;
-}
-
-StringPiece rtrimWhitespace(StringPiece sp) {
-// Spaces other than ' ' characters are less common but should be
-// checked.  This configuration where we loop on the ' '
-// separately from oddspaces was empirically fastest.
-
-loop:
-  for (; !sp.empty() && sp.back() == ' '; sp.pop_back()) {
-  }
-  if (!sp.empty() && is_oddspace(sp.back())) {
-    sp.pop_back();
-    goto loop;
-  }
-
-  return sp;
 }
 
 namespace {
@@ -278,7 +565,7 @@ void toLowerAscii8(char& c) {
   // by adding 0x20.
 
   // Step 1: Clear the high order bit. We'll deal with it in Step 5.
-  unsigned char rotated = c & 0x7f;
+  uint8_t rotated = uint8_t(c & 0x7f);
   // Currently, the value of rotated, as a function of the original c is:
   //   below 'A':   0- 64
   //   'A'-'Z':    65- 90
@@ -324,7 +611,7 @@ void toLowerAscii8(char& c) {
   // At this point, rotated is 0x20 if c is 'A'-'Z' and 0x00 otherwise
 
   // Step 7: Add rotated to c
-  c += rotated;
+  c += char(rotated);
 }
 
 void toLowerAscii32(uint32_t& c) {
@@ -407,5 +694,61 @@ void toLowerAscii(char* str, size_t length) {
     offset++;
   }
 }
+
+namespace detail {
+
+size_t hexDumpLine(const void* ptr, size_t offset, size_t size,
+                   std::string& line) {
+  static char hexValues[] = "0123456789abcdef";
+  // Line layout:
+  // 8: address
+  // 1: space
+  // (1+2)*16: hex bytes, each preceded by a space
+  // 1: space separating the two halves
+  // 3: "  |"
+  // 16: characters
+  // 1: "|"
+  // Total: 78
+  line.clear();
+  line.reserve(78);
+  const uint8_t* p = reinterpret_cast<const uint8_t*>(ptr) + offset;
+  size_t n = std::min(size - offset, size_t(16));
+  line.push_back(hexValues[(offset >> 28) & 0xf]);
+  line.push_back(hexValues[(offset >> 24) & 0xf]);
+  line.push_back(hexValues[(offset >> 20) & 0xf]);
+  line.push_back(hexValues[(offset >> 16) & 0xf]);
+  line.push_back(hexValues[(offset >> 12) & 0xf]);
+  line.push_back(hexValues[(offset >> 8) & 0xf]);
+  line.push_back(hexValues[(offset >> 4) & 0xf]);
+  line.push_back(hexValues[offset & 0xf]);
+  line.push_back(' ');
+
+  for (size_t i = 0; i < n; i++) {
+    if (i == 8) {
+      line.push_back(' ');
+    }
+
+    line.push_back(' ');
+    line.push_back(hexValues[(p[i] >> 4) & 0xf]);
+    line.push_back(hexValues[p[i] & 0xf]);
+  }
+
+  // 3 spaces for each byte we're not printing, one separating the halves
+  // if necessary
+  line.append(3 * (16 - n) + (n <= 8), ' ');
+  line.append("  |");
+
+  for (size_t i = 0; i < n; i++) {
+    char c = (p[i] >= 32 && p[i] <= 126 ? static_cast<char>(p[i]) : '.');
+    line.push_back(c);
+  }
+  line.append(16 - n, ' ');
+  line.push_back('|');
+  DCHECK_EQ(line.size(), 78u);
+
+  return n;
+}
+
+} // namespace detail
 
 } // namespace acc

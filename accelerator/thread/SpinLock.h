@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -36,11 +36,12 @@
 #include <atomic>
 #include <cassert>
 #include <cstdint>
-#include <ctime>
+#include <mutex>
 #include <type_traits>
 
-#include "accelerator/Asm.h"
-#include "accelerator/CPortability.h"
+#include <boost/noncopyable.hpp>
+
+#include "accelerator/Portability.h"
 
 namespace acc {
 
@@ -124,15 +125,18 @@ struct MicroSpinLock {
   }
 
   bool cas(uint8_t compare, uint8_t newVal) {
-    return std::atomic_compare_exchange_strong_explicit(
-        payload(), &compare, newVal,
-        std::memory_order_acquire,
-        std::memory_order_relaxed);
+    return std::atomic_compare_exchange_strong_explicit(payload(), &compare, newVal,
+                                                        std::memory_order_acquire,
+                                                        std::memory_order_relaxed);
   }
 };
 static_assert(
     std::is_pod<MicroSpinLock>::value,
     "MicroSpinLock must be kept a POD type.");
+
+typedef std::lock_guard<MicroSpinLock> MSLGuard;
+
+//////////////////////////////////////////////////////////////////////
 
 class SpinLock {
  public:
@@ -154,7 +158,7 @@ class SpinLock {
 };
 
 template <typename LOCK>
-class SpinLockGuardImpl {
+class SpinLockGuardImpl : private boost::noncopyable {
  public:
   ACC_ALWAYS_INLINE explicit SpinLockGuardImpl(LOCK& lock) :
     lock_(lock) {
@@ -163,10 +167,6 @@ class SpinLockGuardImpl {
   ACC_ALWAYS_INLINE ~SpinLockGuardImpl() {
     lock_.unlock();
   }
-
-  SpinLockGuardImpl(const SpinLockGuardImpl&) = delete;
-  SpinLockGuardImpl& operator=(const SpinLockGuardImpl&) = delete;
-
  private:
   LOCK& lock_;
 };

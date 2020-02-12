@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,13 +23,15 @@
 #include <cstddef>
 #include <limits>
 
+#include <boost/noncopyable.hpp>
+
 namespace acc {
 
 /**
  * An atomic bitset of fixed size (specified at compile time).
  */
 template <size_t N>
-class AtomicBitSet {
+class AtomicBitSet : private boost::noncopyable {
  public:
   /**
    * Construct an AtomicBitSet; all bits are initially false.
@@ -85,9 +87,6 @@ class AtomicBitSet {
   constexpr size_t size() const {
     return N;
   }
-
-  AtomicBitSet(const AtomicBitSet&) = delete;
-  AtomicBitSet& operator=(const AtomicBitSet&) = delete;
 
  private:
   typedef unsigned long long BlockType;

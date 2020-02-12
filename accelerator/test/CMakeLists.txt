@@ -1,18 +1,12 @@
 # Copyright 2017-present Yeolar
 
 set(ACCELERATOR_BASE_TEST_SRCS
-    ArenaTest.cpp
     Base64Test.cpp
-    ChecksumTest.cpp
     FixedStreamTest.cpp
-    HashTest.cpp
     LoggingTest.cpp
-    #MemoryProtectTest.cpp
+    PathTest.cpp
     ReflectObjectTest.cpp
     SingletonTest.cpp
-    StringTest.cpp
-    TimedHeapTest.cpp
-    TraitsTest.cpp
 )
 
 foreach(test_src ${ACCELERATOR_BASE_TEST_SRCS})

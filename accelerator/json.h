@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -96,6 +96,7 @@ struct serialization_opts {
   bool allow_trailing_comma;
 
   // Sort keys of all objects before printing out (potentially slow)
+  // using dynamic::operator<.
   bool sort_keys;
 
   // Replace invalid utf8 characters with U+FFFD and continue
@@ -142,42 +143,6 @@ void escapeString(
  * Strip all C99-like comments (i.e. // and / * ... * /)
  */
 std::string stripComments(StringPiece jsonC);
-
-/*
- * Some extension.
- */
-template <class T>
-inline T get(const dynamic& j,
-             const std::string& key,
-             const T& dflt = T()) {
-  return as<T>(j.getDefault(key, dflt));
-}
-
-inline std::string get(const dynamic& j,
-                       const std::string& key,
-                       const char* dflt = "") {
-  return get<std::string>(j, key, dflt);
-}
-
-template <class T>
-inline std::vector<T> getArray(const dynamic& j, const std::string& key) {
-  std::vector<T> v;
-  for (auto& i : j.at(key)) {
-    v.push_back(as<T>(i));
-  }
-  return v;
-}
-
-inline dynamic resolve(const dynamic& j, const std::string& path) {
-  std::vector<StringPiece> keys;
-  split('.', path, keys);
-  dynamic o = j;
-  for (auto& k : keys) {
-    o = dynamic(o.at(k));
-  }
-  return o;
-}
-
 } // namespace json
 
 //////////////////////////////////////////////////////////////////////

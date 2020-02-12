@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -212,6 +212,56 @@ ACC_HAS_TRUE_XXX(IsZeroInitializable);
 #undef ACC_HAS_TRUE_XXX
 
 } // namespace traits_detail
+
+struct Ignore {
+  Ignore() = default;
+  template <class T>
+  constexpr /* implicit */ Ignore(const T&) {}
+  template <class T>
+  const Ignore& operator=(T const&) const { return *this; }
+};
+
+template <class...>
+using Ignored = Ignore;
+
+namespace traits_detail_IsEqualityComparable {
+Ignore operator==(Ignore, Ignore);
+
+template <class T, class U = T>
+struct IsEqualityComparable
+    : std::is_convertible<
+          decltype(std::declval<T>() == std::declval<U>()),
+          bool
+      > {};
+} // namespace traits_detail_IsEqualityComparable
+
+/* using override */ using traits_detail_IsEqualityComparable::
+    IsEqualityComparable;
+
+namespace traits_detail_IsLessThanComparable {
+Ignore operator<(Ignore, Ignore);
+
+template <class T, class U = T>
+struct IsLessThanComparable
+    : std::is_convertible<
+          decltype(std::declval<T>() < std::declval<U>()),
+          bool
+      > {};
+} // namespace traits_detail_IsLessThanComparable
+
+/* using override */ using traits_detail_IsLessThanComparable::
+    IsLessThanComparable;
+
+namespace traits_detail_IsNothrowSwappable {
+/* using override */ using std::swap;
+
+template <class T>
+struct IsNothrowSwappable
+    : bool_constant<std::is_nothrow_move_constructible<T>::value&& noexcept(
+          swap(std::declval<T&>(), std::declval<T&>()))> {};
+} // namespace traits_detail_IsNothrowSwappable
+
+/* using override */ using traits_detail_IsNothrowSwappable::IsNothrowSwappable;
 
 template <class T>
 struct IsRelocatable : std::conditional<

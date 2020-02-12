@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,10 @@
 
 #include "accelerator/SystemUtil.h"
 
+namespace acc {
+
+#ifdef __linux__
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -23,10 +27,7 @@
 #define _GNU_SOURCE
 #endif
 #include <sched.h>
-#include <sys/statvfs.h>
 #include <sys/sysinfo.h>
-
-namespace acc {
 
 bool setCpuAffinity(int cpu, pid_t pid) {
   cpu_set_t mask;
@@ -47,17 +48,6 @@ int getCpuAffinity(pid_t pid) {
     }
   }
   return -1;
-}
-
-FsInfo getFsInfo(const char* path) {
-  FsInfo info;
-
-  struct statvfs stats;
-  statvfs(path, &stats);
-
-  info.freeBlocks = stats.f_bsize * stats.f_bfree;
-  info.availableBlocks = stats.f_bsize * stats.f_bavail;
-  return info;
 }
 
 SystemMemory getSystemMemory() {
@@ -92,6 +82,21 @@ ProcessMemory getProcessMemory() {
   }
   fclose(file);
   return mem;
+}
+
+#endif
+
+#include <sys/statvfs.h>
+
+FsInfo getFsInfo(const char* path) {
+  FsInfo info;
+
+  struct statvfs stats;
+  statvfs(path, &stats);
+
+  info.freeBlocks = stats.f_bsize * stats.f_bfree;
+  info.availableBlocks = stats.f_bsize * stats.f_bavail;
+  return info;
 }
 
 } // namespace acc

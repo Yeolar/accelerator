@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
 #pragma once
 
 #include "accelerator/Conv.h"
-#include "accelerator/backport/Functional.h"
+#include "accelerator/Functional.h"
 
 namespace acc {
 
@@ -166,14 +166,14 @@ typename Map::mapped_type* get_ptr(Map& map, const Key& key) {
  * in the map.
  */
 template <class Map, typename Key = typename Map::key_type>
-const typename Map::mapped_type::element_type* get_deref_smart_ptr(
+const typename Map::mapped_type::element_type* get_smart_ptr(
     const Map& map, const Key& key) {
   auto pos = map.find(key);
   return (pos != map.end() ? pos->second.get() : nullptr);
 }
 
 template <class Map, typename Key = typename Map::key_type>
-typename Map::mapped_type::element_type* get_deref_smart_ptr(
+typename Map::mapped_type::element_type* get_smart_ptr(
     Map& map, const Key& key) {
   auto pos = map.find(key);
   return (pos != map.end() ? pos->second.get() : nullptr);
@@ -183,14 +183,13 @@ typename Map::mapped_type::element_type* get_deref_smart_ptr(
  * Given a map and a key, return a container of all values corresponding
  * to the key in the map.
  */
-template <class Map, typename Key = typename Map::key_type>
-std::vector<typename Map::mapped_type> get_all(const Map& map, const Key& key) {
-  std::vector<typename Map::mapped_type> result;
+template <class Container, class Map, typename Key = typename Map::key_type>
+void get_all(const Map& map, const Key& key, const Container& out) {
   auto rng = map.equal_range(key);
   for (auto it = rng.first; it != rng.second; ++it) {
-    result.push_back(it->second);
+    out.push_back(it->second);
   }
-  return result;
+  return out;
 }
 
 } // namespace acc

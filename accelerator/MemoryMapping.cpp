@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,10 +22,10 @@
 #include <system_error>
 #include <utility>
 #include <fcntl.h>
+#include <sys/mman.h>
 #include <sys/types.h>
 
 #include "accelerator/Portability.h"
-#include "accelerator/io/HugePages.h"
 
 // Linux implementations of unmap/mlock/munlock take a kernel
 // semaphore and block other threads from doing other memory
@@ -41,6 +41,10 @@ DEFINE_int64(mlock_chunk_size, kDefaultMlockChunkSize,
 #endif
 
 namespace acc {
+
+MemoryMapping::MemoryMapping(MemoryMapping&& other) noexcept {
+  swap(other);
+}
 
 MemoryMapping::MemoryMapping(File file, off_t offset, off_t length,
                              Options options)
@@ -66,18 +70,6 @@ MemoryMapping::MemoryMapping(AnonymousType, off_t length, Options options)
   init(0, length);
 }
 
-namespace {
-
-void getDeviceOptions(dev_t device, off_t& pageSize, bool& autoExtend) {
-  auto ps = getHugePageSizeForDevice(device);
-  if (ps) {
-    pageSize = ps->size;
-    autoExtend = true;
-  }
-}
-
-} // namespace
-
 void MemoryMapping::init(off_t offset, off_t length) {
   const bool grow = options_.grow;
   const bool anon = !file_;
@@ -95,11 +87,9 @@ void MemoryMapping::init(off_t offset, off_t length) {
   if (!anon) {
     // Stat the file
     ACCCHECK(fstat(file_.fd(), &st) != -1);
-
-    if (pageSize == 0) {
-      getDeviceOptions(st.st_dev, pageSize, autoExtend);
-    }
   } else {
+    DCHECK(!file_);
+    DCHECK_EQ(offset, 0);
     ACCCHECK_EQ(pageSize, 0);
     ACCCHECK_GE(length, 0);
   }
@@ -154,8 +144,12 @@ void MemoryMapping::init(off_t offset, off_t length) {
     mapStart_ = nullptr;
   } else {
     int flags = options_.shared ? MAP_SHARED : MAP_PRIVATE;
-    if (anon) flags |= MAP_ANONYMOUS;
-    if (options_.prefault) flags |= MAP_POPULATE;
+    if (anon) {
+      flags |= MAP_ANONYMOUS;
+    }
+    if (options_.prefault) {
+      flags |= MAP_POPULATE;
+    }
 
     // The standard doesn't actually require PROT_NONE to be zero...
     int prot = PROT_NONE;
@@ -237,8 +231,8 @@ bool MemoryMapping::mlock(LockMode lock) {
     return true;
   }
 
-  auto msg = to<std::string>(
-      "mlock(", mapLength_, ") failed at ", amountSucceeded);
+  auto msg =
+      to<std::string>("mlock(", mapLength_, ") failed at ", amountSucceeded);
   if (lock == LockMode::TRY_LOCK && errno == EPERM) {
     ACCPLOG(WARN) << msg;
   } else if (lock == LockMode::TRY_LOCK && errno == ENOMEM) {
@@ -257,7 +251,9 @@ bool MemoryMapping::mlock(LockMode lock) {
 }
 
 void MemoryMapping::munlock(bool dontneed) {
-  if (!locked_) return;
+  if (!locked_) {
+    return;
+  }
 
   size_t amountSucceeded = 0;
   if (!memOpInChunks(
@@ -273,6 +269,10 @@ void MemoryMapping::munlock(bool dontneed) {
     ACCPLOG(WARN) << "madvise()";
   }
   locked_ = false;
+}
+
+void MemoryMapping::hintLinearScan() {
+  advise(MADV_SEQUENTIAL);
 }
 
 MemoryMapping::~MemoryMapping() {
@@ -327,6 +327,8 @@ void MemoryMapping::swap(MemoryMapping& other) noexcept {
   swap(this->locked_, other.locked_);
   swap(this->data_, other.data_);
 }
+
+void swap(MemoryMapping& a, MemoryMapping& b) noexcept { a.swap(b); }
 
 void alignedForwardMemcpy(void* dst, const void* src, size_t size) {
   assert(reinterpret_cast<uintptr_t>(src) % alignof(unsigned long) == 0);

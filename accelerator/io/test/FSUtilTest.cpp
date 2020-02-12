@@ -17,7 +17,7 @@
 #include <gtest/gtest.h>
 
 #include "accelerator/Logging.h"
-#include "accelerator/io/FSUtil.h"
+#include "accelerator/io/FsUtil.h"
 
 using namespace acc;
 

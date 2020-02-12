@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -88,7 +88,7 @@ class RWSpinLock {
   // Lockable Concept
   void lock() {
     uint_fast32_t count = 0;
-    while (!LIKELY(try_lock())) {
+    while (!ACC_LIKELY(try_lock())) {
       if (++count > 1000) {
         std::this_thread::yield();
       }
@@ -104,7 +104,7 @@ class RWSpinLock {
   // SharedLockable Concept
   void lock_shared() {
     uint_fast32_t count = 0;
-    while (!LIKELY(try_lock_shared())) {
+    while (!ACC_LIKELY(try_lock_shared())) {
       if (++count > 1000) {
         std::this_thread::yield();
       }
@@ -176,7 +176,7 @@ class RWSpinLock {
     // fetch_add is considerably (100%) faster than compare_exchange,
     // so here we are optimizing for the common (lock success) case.
     int32_t value = bits_.fetch_add(READER, std::memory_order_acquire);
-    if (UNLIKELY(value & (WRITER|UPGRADED))) {
+    if (ACC_UNLIKELY(value & (WRITER|UPGRADED))) {
       bits_.fetch_add(-READER, std::memory_order_release);
       return false;
     }

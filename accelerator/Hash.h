@@ -1,6 +1,6 @@
 /*
  * Copyright 2017 Facebook, Inc.
- * Copyright 2018 Yeolar
+ * Copyright 2017-present Yeolar
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
 
 #include "accelerator/Bits.h"
 #include "accelerator/SpookyHashV2.h"
-#include "accelerator/Utility.h"
+#include "accelerator/Tuple.h"
 
 /*
  * Various hashing functions.

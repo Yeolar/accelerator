@@ -1,11 +1,7 @@
 # Copyright 2017-present Yeolar
 
 set(ACCELERATOR_IO_TEST_SRCS
-    FileTest.cpp
-    FSUtilTest.cpp
-    IOBufCursorTest.cpp
-    IOBufTest.cpp
-    PathTest.cpp
+    FsUtilTest.cpp
 )
 
 foreach(test_src ${ACCELERATOR_IO_TEST_SRCS})

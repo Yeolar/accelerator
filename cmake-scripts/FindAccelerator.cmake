@@ -4,9 +4,6 @@
 #  ACCELERATOR_LIBRARY     - List of libraries when using accelerator.
 #  ACCELERATOR_FOUND       - True if accelerator found.
 
-find_package(PkgConfig)
-pkg_check_modules(ACCELERATOR QUIET accelerator)
-
 if(ACCELERATOR_INCLUDE_DIR)
   # Already in cache, be silent
   set(ACCELERATOR_FIND_QUIETLY TRUE)

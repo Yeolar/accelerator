@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,7 +29,10 @@
 
 namespace acc {
 
-#if _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600
+#if _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600 || \
+    (defined(__APPLE__) &&                                \
+     (__MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_6 ||    \
+      __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_3_0))
 
 inline void* aligned_malloc(size_t size, size_t align) {
   // use posix_memalign, but mimic the behaviour of memalign
@@ -38,10 +41,18 @@ inline void* aligned_malloc(size_t size, size_t align) {
   return rc == 0 ? (errno = 0, ptr) : (errno = rc, nullptr);
 }
 
+inline void aligned_free(void* aligned_ptr) {
+  free(aligned_ptr);
+}
+
 #else
 
 inline void* aligned_malloc(size_t size, size_t align) {
   return memalign(align, size);
+}
+
+inline void aligned_free(void* aligned_ptr) {
+  free(aligned_ptr);
 }
 
 #endif
@@ -168,5 +179,22 @@ class CxxAllocatorAdaptor {
     return std::addressof(a.ref_.get()) != std::addressof(b.ref_.get());
   }
 };
+
+/**
+ * AllocatorHasTrivialDeallocate
+ *
+ * Unambiguously inherits std::integral_constant<bool, V> for some bool V.
+ *
+ * Describes whether a C++ Aallocator has trivial, i.e. no-op, deallocate().
+ *
+ * Also may be used to describe types which may be used with
+ * CxxAllocatorAdaptor.
+ */
+template <typename Alloc>
+struct AllocatorHasTrivialDeallocate : std::false_type {};
+
+template <typename T, class Alloc>
+struct AllocatorHasTrivialDeallocate<CxxAllocatorAdaptor<T, Alloc>>
+    : AllocatorHasTrivialDeallocate<Alloc> {};
 
 } // namespace acc

@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -55,7 +55,7 @@ inline size_t qfind_first_byte_of_std(
 size_t qfind_first_byte_of_nosse(
     const StringPiece haystack,
     const StringPiece needles) {
-  if (UNLIKELY(needles.empty() || haystack.empty())) {
+  if (ACC_UNLIKELY(needles.empty() || haystack.empty())) {
     return std::string::npos;
   }
   // The thresholds below were empirically determined by benchmarking.

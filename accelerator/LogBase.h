@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,7 @@
 #include <thread>
 
 #include "accelerator/FixedStream.h"
-#include "accelerator/Time.h"
+#include "accelerator/TimeWatcher.h"
 #include "accelerator/thread/AtomicLinkedList.h"
 
 #ifndef __FILENAME__
@@ -169,9 +169,9 @@ class CostLogMessage {
 
  private:
   void execute() {
-    uint64_t start = timestampNow();
+    TimeWatcher watcher;
     function_();
-    uint64_t cost = timePassed(start);
+    uint64_t cost = watcher.elapsed();
 
     if (cost >= param_.threshold) {
       LogMessage(param_.logger,

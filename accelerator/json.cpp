@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,10 +17,9 @@
 
 #include "accelerator/json.h"
 
-#include <cassert>
-#include <boost/next_prior.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include "accelerator/Bits.h"
 #include "accelerator/Conv.h"
 #include "accelerator/Range.h"
 #include "accelerator/String.h"
@@ -31,92 +30,7 @@ namespace acc {
 //////////////////////////////////////////////////////////////////////
 
 namespace json {
-
 namespace {
-
-char32_t decodeUtf8(
-    const unsigned char*& p,
-    const unsigned char* const e,
-    bool skipOnError) {
-  /* The following encodings are valid, except for the 5 and 6 byte
-   * combinations:
-   * 0xxxxxxx
-   * 110xxxxx 10xxxxxx
-   * 1110xxxx 10xxxxxx 10xxxxxx
-   * 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-   * 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
-   * 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
-   */
-
-  auto skip = [&] { ++p; return U'\ufffd'; };
-
-  if (p >= e) {
-    if (skipOnError) return skip();
-    throw std::runtime_error("acc::decodeUtf8 empty/invalid string");
-  }
-
-  unsigned char fst = *p;
-  if (!(fst & 0x80)) {
-    // trivial case
-    return *p++;
-  }
-
-  static const uint32_t bitMask[] = {
-    (1 << 7) - 1,
-    (1 << 11) - 1,
-    (1 << 16) - 1,
-    (1 << 21) - 1
-  };
-
-  // upper control bits are masked out later
-  uint32_t d = fst;
-
-  if ((fst & 0xC0) != 0xC0) {
-    if (skipOnError) return skip();
-    throw std::runtime_error(to<std::string>("acc::decodeUtf8 i=0 d=", d));
-  }
-
-  fst <<= 1;
-
-  for (unsigned int i = 1; i != 3 && p + i < e; ++i) {
-    unsigned char tmp = p[i];
-
-    if ((tmp & 0xC0) != 0x80) {
-      if (skipOnError) return skip();
-      throw std::runtime_error(
-        to<std::string>("acc::decodeUtf8 i=", i, " tmp=", (uint32_t)tmp));
-    }
-
-    d = (d << 6) | (tmp & 0x3F);
-    fst <<= 1;
-
-    if (!(fst & 0x80)) {
-      d &= bitMask[i];
-
-      // overlong, could have been encoded with i bytes
-      if ((d & ~bitMask[i - 1]) == 0) {
-        if (skipOnError) return skip();
-        throw std::runtime_error(
-          to<std::string>("acc::decodeUtf8 i=", i, " d=", d));
-      }
-
-      // check for surrogates only needed for 3 bytes
-      if (i == 2) {
-        if ((d >= 0xD800 && d <= 0xDFFF) || d > 0x10FFFF) {
-          if (skipOnError) return skip();
-          throw std::runtime_error(
-            to<std::string>("acc::decodeUtf8 i=", i, " d=", d));
-        }
-      }
-
-      p += i + 1;
-      return d;
-    }
-  }
-
-  if (skipOnError) return skip();
-  throw std::runtime_error("acc::decodeUtf8 encoding length maxed out");
-}
 
 struct Printer {
   explicit Printer(
@@ -218,7 +132,7 @@ struct Printer {
     indent();
     newline();
     (*this)(a[0]);
-    for (auto& val : range(boost::next(a.begin()), a.end())) {
+    for (auto& val : range(std::next(a.begin()), a.end())) {
       out_ += ',';
       newline();
       (*this)(val);
@@ -248,7 +162,7 @@ struct Printer {
   }
 
   void mapColon() const {
-    out_ += indentLevel_ ? " : " : ":";
+    out_ += indentLevel_ ? ": " : ":";
   }
 
  private:
@@ -257,25 +171,20 @@ struct Printer {
   serialization_opts const& opts_;
 };
 
-  //////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 
-  struct ParseError : std::runtime_error {
-    explicit ParseError(int line)
-      : std::runtime_error(to<std::string>("json parse error on line ", line))
-    {}
-
-    explicit ParseError(int line, std::string const& context,
-        std::string const& expected)
-      : std::runtime_error(to<std::string>("json parse error on line ", line,
-          !context.empty() ? to<std::string>(" near `", context, '\'')
-                          : "",
-          ": ", expected))
-    {}
-
-    explicit ParseError(std::string const& msg)
-      : std::runtime_error("json parse error: " + msg)
-    {}
-  };
+struct ACC_EXPORT ParseError : std::runtime_error {
+  explicit ParseError(
+      unsigned int line,
+      std::string const& context,
+      std::string const& expected)
+      : std::runtime_error(to<std::string>(
+            "json parse error on line ",
+            line,
+            !context.empty() ? to<std::string>(" near `", context, '\'') : "",
+            ": ",
+            expected)) {}
+};
 
 // Wraps our input buffer with some helper functions.
 struct Input {
@@ -294,7 +203,7 @@ struct Input {
 
   // Parse ahead for as long as the supplied predicate is satisfied,
   // returning a range of what was skipped.
-  template<class Predicate>
+  template <class Predicate>
   StringPiece skipWhile(const Predicate& p) {
     std::size_t skipped = 0;
     for (; skipped < range_.size(); ++skipped) {
@@ -350,7 +259,7 @@ struct Input {
     storeCurrent();
   }
 
-  template<class T>
+  template <class T>
   T extract() {
     try {
       return to<T>(&range_);
@@ -423,7 +332,7 @@ std::string parseString(Input& in);
 dynamic parseNumber(Input& in);
 
 dynamic parseObject(Input& in) {
-  assert(*in == '{');
+  DCHECK_EQ(*in, '{');
   ++in;
 
   dynamic ret = dynamic::object;
@@ -467,7 +376,7 @@ dynamic parseObject(Input& in) {
 }
 
 dynamic parseArray(Input& in) {
-  assert(*in == '[');
+  DCHECK_EQ(*in, '[');
   ++in;
 
   dynamic ret = dynamic::array;
@@ -514,15 +423,15 @@ dynamic parseNumber(Input& in) {
 
   constexpr const char* maxInt = "9223372036854775807";
   constexpr const char* minInt = "-9223372036854775808";
-  const auto maxIntLen = strlen(maxInt);
-  const auto minIntLen = strlen(minInt);
+  constexpr auto maxIntLen = constexpr_strlen(maxInt);
+  constexpr auto minIntLen = constexpr_strlen(minInt);
 
   if (*in != '.' && !wasE && in.getOpts().parse_numbers_as_strings) {
     return integral;
   }
 
   if (*in != '.' && !wasE) {
-    if (LIKELY(!in.getOpts().double_fallback || integral.size() < maxIntLen) ||
+    if (ACC_LIKELY(!in.getOpts().double_fallback || integral.size() < maxIntLen) ||
         (!negative && integral.size() == maxIntLen && integral <= maxInt) ||
         (negative && integral.size() == minIntLen && integral <= minInt)) {
       auto val = to<int64_t>(integral);
@@ -553,11 +462,12 @@ dynamic parseNumber(Input& in) {
 }
 
 std::string decodeUnicodeEscape(Input& in) {
-  auto hexVal = [&] (char c) -> unsigned {
-    return c >= '0' && c <= '9' ? c - '0' :
+  auto hexVal = [&] (int c) -> uint16_t {
+    return uint16_t(
+           c >= '0' && c <= '9' ? c - '0' :
            c >= 'a' && c <= 'f' ? c - 'a' + 10 :
            c >= 'A' && c <= 'F' ? c - 'A' + 10 :
-           (in.error("invalid hex digit"), 0);
+           (in.error("invalid hex digit"), 0));
   };
 
   auto readHex = [&]() -> uint16_t {
@@ -565,7 +475,7 @@ std::string decodeUnicodeEscape(Input& in) {
       in.error("expected 4 hex digits");
     }
 
-    uint16_t ret = hexVal(*in) * 4096;
+    uint16_t ret = uint16_t(hexVal(*in) * 4096);
     ++in;
     ret += hexVal(*in) * 256;
     ++in;
@@ -601,7 +511,7 @@ std::string decodeUnicodeEscape(Input& in) {
 }
 
 std::string parseString(Input& in) {
-  assert(*in == '\"');
+  DCHECK_EQ(*in, '\"');
   ++in;
 
   std::string ret;
@@ -646,7 +556,7 @@ std::string parseString(Input& in) {
       in.error("null byte in string");
     }
 
-    ret.push_back(*in);
+    ret.push_back(char(*in));
     ++in;
   }
 
@@ -685,12 +595,50 @@ std::string serialize(dynamic const& dyn, serialization_opts const& opts) {
   return ret;
 }
 
+// Fast path to determine the longest prefix that can be left
+// unescaped in a string of sizeof(T) bytes packed in an integer of
+// type T.
+template <class T>
+size_t firstEscapableInWord(T s) {
+  static_assert(std::is_unsigned<T>::value, "Unsigned integer required");
+  static constexpr T kOnes = ~T() / 255; // 0x...0101
+  static constexpr T kMsbs = kOnes * 0x80; // 0x...8080
+
+  // Sets the MSB of bytes < b. Precondition: b < 128.
+  auto isLess = [](T w, uint8_t b) {
+    // A byte is < b iff subtracting b underflows, so we check that
+    // the MSB wasn't set before and it's set after the subtraction.
+    return (w - kOnes * b) & ~w & kMsbs;
+  };
+
+  auto isChar = [&](uint8_t c) {
+    // A byte is == c iff it is 0 if xored with c.
+    return isLess(s ^ (kOnes * c), 1);
+  };
+
+  // The following masks have the MSB set for each byte of the word
+  // that satisfies the corresponding condition.
+  auto isHigh = s & kMsbs; // >= 128
+  auto isLow = isLess(s, 0x20); // <= 0x1f
+  auto needsEscape = isHigh | isLow | isChar('\\') | isChar('"');
+
+  if (!needsEscape) {
+    return sizeof(T);
+  }
+
+  if (acc::kIsLittleEndian) {
+    return acc::findFirstSet(needsEscape) / 8 - 1;
+  } else {
+    return sizeof(T) - acc::findLastSet(needsEscape) / 8;
+  }
+}
+
 // Escape a string so that it is legal to print it in JSON text.
 void escapeString(
     StringPiece input,
     std::string& out,
     const serialization_opts& opts) {
-  auto hexDigit = [] (int c) -> char {
+  auto hexDigit = [] (uint8_t c) -> char {
     return c < 10 ? c + '0' : c - 10 + 'a';
   };
 
@@ -701,22 +649,52 @@ void escapeString(
   auto* e = reinterpret_cast<const unsigned char*>(input.end());
 
   while (p < e) {
+    // Find the longest prefix that does not need escaping, and copy
+    // it literally into the output string.
+    auto firstEsc = p;
+    while (firstEsc < e) {
+      auto avail = e - firstEsc;
+      uint64_t word = 0;
+      if (avail >= 8) {
+        word = acc::loadUnaligned<uint64_t>(firstEsc);
+      } else {
+        word = acc::partialLoadUnaligned<uint64_t>(firstEsc, avail);
+      }
+      auto prefix = firstEscapableInWord(word);
+      DCHECK_LE(prefix, avail);
+      firstEsc += prefix;
+      if (prefix < 8) {
+        break;
+      }
+    }
+    if (firstEsc > p) {
+      out.append(reinterpret_cast<const char*>(p), firstEsc - p);
+      p = firstEsc;
+      // We can't be in the middle of a multibyte sequence, so we can reset q.
+      q = p;
+      if (p == e) {
+        break;
+      }
+    }
+
+    // Handle the next byte that may need escaping.
+
     // Since non-ascii encoding inherently does utf8 validation
     // we explicitly validate utf8 only if non-ascii encoding is disabled.
     if ((opts.validate_utf8 || opts.skip_invalid_utf8)
         && !opts.encode_non_ascii) {
-      // to achieve better spatial and temporal coherence
+      // To achieve better spatial and temporal coherence
       // we do utf8 validation progressively along with the
-      // string-escaping instead of two separate passes
+      // string-escaping instead of two separate passes.
 
-      // as the encoding progresses, q will stay at or ahead of p
+      // As the encoding progresses, q will stay at or ahead of p.
       ACCCHECK_GE(q, p);
 
-      // as p catches up with q, move q forward
+      // As p catches up with q, move q forward.
       if (q == p) {
         // calling utf8_decode has the side effect of
         // checking that utf8 encodings are valid
-        char32_t v = decodeUtf8(q, e, opts.skip_invalid_utf8);
+        char32_t v = utf8ToCodePoint(q, e, opts.skip_invalid_utf8);
         if (opts.skip_invalid_utf8 && v == U'\ufffd') {
           out.append(u8"\ufffd");
           p = q;
@@ -727,15 +705,17 @@ void escapeString(
     if (opts.encode_non_ascii && (*p & 0x80)) {
       // note that this if condition captures utf8 chars
       // with value > 127, so size > 1 byte
-      char32_t v = decodeUtf8(p, e, opts.skip_invalid_utf8);
-      out.append("\\u");
-      out.push_back(hexDigit(v >> 12));
-      out.push_back(hexDigit((v >> 8) & 0x0f));
-      out.push_back(hexDigit((v >> 4) & 0x0f));
-      out.push_back(hexDigit(v & 0x0f));
+      char32_t v = utf8ToCodePoint(p, e, opts.skip_invalid_utf8);
+      char buf[] = "\\u\0\0\0\0";
+      buf[2] = hexDigit(uint8_t(v >> 12));
+      buf[3] = hexDigit((v >> 8) & 0x0f);
+      buf[4] = hexDigit((v >> 4) & 0x0f);
+      buf[5] = hexDigit(v & 0x0f);
+      out.append(buf, 6);
     } else if (*p == '\\' || *p == '\"') {
-      out.push_back('\\');
-      out.push_back(*p++);
+      char buf[] = "\\\0";
+      buf[1] = char(*p++);
+      out.append(buf, 2);
     } else if (*p <= 0x1f) {
       switch (*p) {
         case '\b': out.append("\\b"); p++; break;
@@ -744,15 +724,16 @@ void escapeString(
         case '\r': out.append("\\r"); p++; break;
         case '\t': out.append("\\t"); p++; break;
         default:
-          // note that this if condition captures non readable chars
+          // Note that this if condition captures non readable chars
           // with value < 32, so size = 1 byte (e.g control chars).
-          out.append("\\u00");
-          out.push_back(hexDigit((*p & 0xf0) >> 4));
-          out.push_back(hexDigit(*p & 0xf));
+          char buf[] = "\\u00\0\0";
+          buf[4] = hexDigit(uint8_t((*p & 0xf0) >> 4));
+          buf[5] = hexDigit(uint8_t(*p & 0xf));
+          out.append(buf, 6);
           p++;
       }
     } else {
-      out.push_back(*p++);
+      out.push_back(char(*p++));
     }
   }
 
@@ -787,7 +768,7 @@ std::string stripComments(StringPiece jsonC) {
         break;
       case State::InString:
         if (s[0] == '\\') {
-          if (UNLIKELY(s.size() == 1)) {
+          if (ACC_UNLIKELY(s.size() == 1)) {
             throw std::logic_error("Invalid JSONC: string is not terminated");
           }
           result.push_back(s[0]);

@@ -1,4 +1,4 @@
-# Copyright (C) 2018, Yeolar
+# Copyright (C) 2018-present, Yeolar
 
 # Define project
 project(accelerator)
@@ -8,23 +8,33 @@ cmake_minimum_required(VERSION 3.2)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake-scripts)
 
 # Set project version
-set(VERSION_MAJOR 1)
-set(VERSION_MINOR 2)
-set(VERSION_PATCH 4)
-
-# Set options
-option(ACC_MON_ENABLE "Enable monitor" ON)
+set(VERSION_MAJOR 2)
+set(VERSION_MINOR 0)
+set(VERSION_PATCH 0)
 
 # Required packages
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package(Threads REQUIRED)
-find_package(Boost REQUIRED COMPONENTS context regex)
+find_package(Boost REQUIRED COMPONENTS context regex thread)
+find_package(DoubleConversion REQUIRED)
 find_package(GFlags REQUIRED)
-find_package(OpenSSL REQUIRED)
-find_package(ZLIB REQUIRED)
 
 # Optional packages
 find_package(GTest)
+find_package(BZip2)
+find_package(LZ4)
+find_package(LibLZMA)
+find_package(Snappy)
+find_package(ZLIB)
+find_package(Zstd)
+
+set(ACC_HAVE_LIBGTEST ${GTEST_FOUND})
+set(ACC_HAVE_LIBBZ2 ${BZIP2_FOUND})
+set(ACC_HAVE_LIBLZ4 ${LZ4_FOUND})
+set(ACC_HAVE_LIBLZMA ${LIBLZMA_FOUND})
+set(ACC_HAVE_LIBSNAPPY ${SNAPPY_FOUND})
+set(ACC_HAVE_LIBZ ${ZLIB_FOUND})
+set(ACC_HAVE_LIBZSTD ${ZSTD_FOUND})
 
 # Setup environment
 set(CMAKE_BUILD_TYPE Release)   # Debug: -g; Release: -O3 -DNDEBUG
@@ -39,10 +49,27 @@ link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
     ${Boost_LIBRARIES}
+    ${DOUBLE_CONVERSION_LIBRARY}
     ${GFLAGS_LIBRARIES}
-    ${OPENSSL_LIBRARIES}
-    ${ZLIB_LIBRARIES}
 )
+if(BZIP2_FOUND)
+  link_libraries(${BZIP2_LIBRARIES})
+endif()
+if(LZ4_FOUND)
+  link_libraries(${LZ4_LIBRARY})
+endif()
+if(LIBLZMA_FOUND)
+  link_libraries(${LIBLZMA_LIBRARIES})
+endif()
+if(SNAPPY_FOUND)
+  link_libraries(${SNAPPY_LIBRARIES})
+endif()
+if(ZLIB_FOUND)
+  link_libraries(${ZLIB_LIBRARIES})
+endif()
+if(ZSTD_FOUND)
+  link_libraries(${ZSTD_LIBRARIES})
+endif()
 
 include_directories(
     ${PROJECT_SOURCE_DIR}
@@ -50,6 +77,15 @@ include_directories(
 
 # Check and setup configurations
 include(CheckCXXSourceCompiles REQUIRED)
+include(CheckFunctionExists REQUIRED)
+
+check_cxx_source_compiles("
+    extern \"C\"
+    void configure_link_extern_weak_test() __attribute__((__weak__));
+    int main() {
+        return configure_link_extern_weak_test == nullptr;
+    }"
+    ACC_HAVE_WEAK_SYMBOLS)
 
 check_cxx_source_compiles("
     #include <string.h>
@@ -61,6 +97,11 @@ check_cxx_source_compiles("
         return ret;
     }"
     ACC_HAVE_XSI_STRERROR_R)
+
+check_function_exists(memrchr ACC_HAVE_MEMRCHR)
+check_function_exists(pipe2 ACC_HAVE_PIPE2)
+check_function_exists(preadv ACC_HAVE_PREADV)
+check_function_exists(pwritev ACC_HAVE_PWRITEV)
 
 if(GFLAGS_FOUND)
     set(CMAKE_REQUIRED_LIBRARIES "gflags")
@@ -86,40 +127,21 @@ configure_file(
 # Work on all sub directories
 add_subdirectory(accelerator)
 add_subdirectory(accelerator/compression)
-add_subdirectory(accelerator/concurrency)
-add_subdirectory(accelerator/double-conversion)
-add_subdirectory(accelerator/event)
-add_subdirectory(accelerator/gen)
 add_subdirectory(accelerator/io)
-add_subdirectory(accelerator/scheduler)
-add_subdirectory(accelerator/ssl)
-add_subdirectory(accelerator/stats)
 add_subdirectory(accelerator/thread)
 
 add_library(accelerator_static STATIC
-    $<TARGET_OBJECTS:double-conversion>
     $<TARGET_OBJECTS:accelerator_base>
     $<TARGET_OBJECTS:accelerator_compression>
-    $<TARGET_OBJECTS:accelerator_concurrency>
-    $<TARGET_OBJECTS:accelerator_event>
     $<TARGET_OBJECTS:accelerator_io>
-    $<TARGET_OBJECTS:accelerator_scheduler>
-    $<TARGET_OBJECTS:accelerator_ssl>
-    $<TARGET_OBJECTS:accelerator_stats>
     $<TARGET_OBJECTS:accelerator_thread>
 )
 set_target_properties(accelerator_static PROPERTIES OUTPUT_NAME accelerator)
 
 add_library(accelerator_shared SHARED
-    $<TARGET_OBJECTS:double-conversion>
     $<TARGET_OBJECTS:accelerator_base>
     $<TARGET_OBJECTS:accelerator_compression>
-    $<TARGET_OBJECTS:accelerator_concurrency>
-    $<TARGET_OBJECTS:accelerator_event>
     $<TARGET_OBJECTS:accelerator_io>
-    $<TARGET_OBJECTS:accelerator_scheduler>
-    $<TARGET_OBJECTS:accelerator_ssl>
-    $<TARGET_OBJECTS:accelerator_stats>
     $<TARGET_OBJECTS:accelerator_thread>
 )
 set_target_properties(accelerator_shared PROPERTIES OUTPUT_NAME accelerator)
@@ -144,12 +166,7 @@ if(GTEST_FOUND)
     enable_testing()
     add_subdirectory(accelerator/test)
     add_subdirectory(accelerator/compression/test)
-    add_subdirectory(accelerator/concurrency/test)
-    add_subdirectory(accelerator/gen/test)
     add_subdirectory(accelerator/io/test)
-    add_subdirectory(accelerator/scheduler/test)
-    add_subdirectory(accelerator/ssl/test)
-    add_subdirectory(accelerator/stats/test)
     add_subdirectory(accelerator/thread/test)
 endif()
 
@@ -168,8 +185,8 @@ set(CPACK_GENERATOR "DEB;TXZ")
 set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
-set(CPACK_PACKAGE_CONTACT "rdd@rddoc.com")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "foundation framework of rddoc.")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-all-dev,libgflags-dev,libssl-dev,zlib1g-dev")
+set(CPACK_PACKAGE_CONTACT "yeolar@qq.com")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A C++ base library forked from facebook folly.")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-all-dev,libdouble-conversion-dev,libgflags-dev")
 include(CPack)
 

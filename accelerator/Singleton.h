@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -105,7 +105,7 @@ class TypeDescriptor {
       ret += "/";
       ret += demangle(tag_ti_.name());
     }
-    return ret.toStdString();
+    return ret;
   }
 
  private:
@@ -127,7 +127,7 @@ struct SingletonHolder {
   }
 
   inline T* get() {
-    if (LIKELY(state_.load(std::memory_order_acquire) == Living)) {
+    if (ACC_LIKELY(state_.load(std::memory_order_acquire) == Living)) {
       return instance_ptr_;
     }
     createInstance();
@@ -141,14 +141,14 @@ struct SingletonHolder {
   }
 
   inline std::weak_ptr<T> get_weak() {
-    if (UNLIKELY(state_.load(std::memory_order_acquire) != Living)) {
+    if (ACC_UNLIKELY(state_.load(std::memory_order_acquire) != Living)) {
       createInstance();
     }
     return instance_weak_;
   }
 
   inline std::shared_ptr<T> try_get() {
-    if (UNLIKELY(state_.load(std::memory_order_acquire) != Living)) {
+    if (ACC_UNLIKELY(state_.load(std::memory_order_acquire) != Living)) {
       createInstance();
     }
     return instance_weak_.lock();

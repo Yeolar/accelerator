@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,30 +22,60 @@
 #include <functional>
 #include <limits>
 #include <type_traits>
+
 #include <boost/function_types/function_arity.hpp>
 
+#include "accelerator/Macro.h"
 #include "accelerator/Portability.h"
 #include "accelerator/ScopeGuard.h"
 #include "accelerator/Time.h"
 #include "accelerator/Traits.h"
+#include "accelerator/Functional.h"
 
-#ifndef __FILENAME__
-#define __FILENAME__ ((strrchr(__FILE__, '/') ?: __FILE__ - 1) + 1)
-#endif
+DECLARE_bool(benchmark);
 
 namespace acc {
-
-typedef std::function<
-  std::pair<uint64_t, unsigned int>(unsigned int)> BenchmarkFun;
 
 /**
  * Runs all benchmarks defined. Usually put in main().
  */
 void runBenchmarks();
 
+/**
+ * Runs all benchmarks defined if and only if the --benchmark flag has
+ * been passed to the program. Usually put in main().
+ */
+inline bool runBenchmarksOnFlag() {
+  if (FLAGS_benchmark) {
+    runBenchmarks();
+  }
+  return FLAGS_benchmark;
+}
+
 namespace detail {
 
-void addBenchmarkImpl(const char* file, const char* name, BenchmarkFun);
+using TimeIterPair = std::pair<uint64_t, unsigned int>;
+using BenchmarkFun = std::function<detail::TimeIterPair(unsigned int)>;
+
+struct BenchmarkRegistration {
+  std::string file;
+  std::string name;
+  BenchmarkFun func;
+};
+
+struct BenchmarkResult {
+  std::string file;
+  std::string name;
+  double timeInNs;
+};
+
+/**
+ * Adds a benchmark wrapped in a std::function. Only used
+ * internally. Pass by value is intentional.
+ */
+void addBenchmarkImpl(const char* file,
+                      const char* name,
+                      BenchmarkFun);
 
 } // namespace detail
 
@@ -91,16 +121,23 @@ struct BenchmarkSuspender {
   }
 
   template <class F>
-  auto dismissing(F f) -> typename std::result_of<F()>::type {
+  auto dismissing(F f) -> invoke_result_t<F> {
     SCOPE_EXIT { rehire(); };
     dismiss();
     return f();
   }
 
+  /**
+   * This is for use inside of if-conditions, used in BENCHMARK macros.
+   * If-conditions bypass the explicit on operator bool.
+   */
   explicit operator bool() const {
     return false;
   }
 
+  /**
+   * Accumulates time spent outside benchmark.
+   */
   static uint64_t timeSpent;
 
  private:
@@ -136,11 +173,12 @@ addBenchmark(const char* file, const char* name, Lambda&& lambda) {
     uint64_t end = nanoTimestampNow();
     // CORE MEASUREMENT ENDS
 
-    return std::pair<uint64_t, unsigned int>(
+    return detail::TimeIterPair(
         (end - start) - BenchmarkSuspender::timeSpent, niter);
   };
 
-  detail::addBenchmarkImpl(file, name, BenchmarkFun(execute));
+  detail::addBenchmarkImpl(file, name,
+    std::function<detail::TimeIterPair(unsigned int)>(execute));
 }
 
 /**
@@ -170,6 +208,11 @@ addBenchmark(const char* file, const char* name, Lambda&& lambda) {
  * benchmarking but otherwise are useless. The compiler tends to do a
  * good job at eliminating unused variables, and this function fools it
  * into thinking var is in fact needed.
+ *
+ * Call makeUnpredictable(var) when you don't want the optimizer to use
+ * its knowledge of var to shape the following code.  This is useful
+ * when constant propagation or power reduction is possible during your
+ * benchmark but not in real use cases.
  */
 
 namespace detail {
@@ -180,7 +223,7 @@ struct DoNotOptimizeAwayNeedsIndirect {
   // First two constraints ensure it can be an "r" operand.
   // std::is_pointer check is because callers seem to expect that
   // doNotOptimizeAway(&x) is equivalent to doNotOptimizeAway(x).
-  constexpr static bool value = !acc::IsTriviallyCopyable<Decayed>::value ||
+  constexpr static bool value = !acc::is_trivially_copyable<Decayed>::value ||
       sizeof(Decayed) > sizeof(long) || std::is_pointer<Decayed>::value;
 };
 } // namespace detail
@@ -212,6 +255,32 @@ auto doNotOptimizeAway(const T& datum) -> typename std::enable_if<
   asm volatile("" ::"m"(datum) : "memory");
 }
 
+template <typename T>
+auto makeUnpredictable(T& datum) -> typename std::enable_if<
+    !detail::DoNotOptimizeAwayNeedsIndirect<T>::value>::type {
+  asm volatile("" : "+r"(datum));
+}
+
+template <typename T>
+auto makeUnpredictable(T& datum) -> typename std::enable_if<
+    detail::DoNotOptimizeAwayNeedsIndirect<T>::value>::type {
+  asm volatile("" ::"m"(datum) : "memory");
+}
+
+struct dynamic;
+
+void benchmarkResultsToDynamic(
+    const std::vector<detail::BenchmarkResult>& data,
+    dynamic&);
+
+void benchmarkResultsFromDynamic(
+    const dynamic&,
+    std::vector<detail::BenchmarkResult>&);
+
+void printResultComparison(
+    const std::vector<detail::BenchmarkResult>& base,
+    const std::vector<detail::BenchmarkResult>& test);
+
 } // namespace acc
 
 /**
@@ -221,11 +290,24 @@ auto doNotOptimizeAway(const T& datum) -> typename std::enable_if<
 #define BENCHMARK_IMPL(funName, stringName, rv, paramType, paramName)   \
   static void funName(paramType);                                       \
   static bool ACC_ANONYMOUS_VARIABLE(accBenchmarkUnused) = (            \
-    ::acc::addBenchmark(__FILENAME__, stringName,                       \
+    ::acc::addBenchmark(__FILE__, stringName,                           \
       [](paramType paramName) -> unsigned { funName(paramName);         \
                                             return rv; }),              \
     true);                                                              \
   static void funName(paramType paramName)
+
+/**
+ * Introduces a benchmark function with support for returning the actual
+ * number of iterations. Used internally, see BENCHMARK_MULTI and friends
+ * below.
+ */
+#define BENCHMARK_MULTI_IMPL(funName, stringName, paramType, paramName) \
+  static unsigned funName(paramType);                                   \
+  static bool ACC_ANONYMOUS_VARIABLE(accBenchmarkUnused) = (            \
+    ::acc::addBenchmark(__FILE__, stringName,                           \
+      [](paramType paramName) { return funName(paramName); }),          \
+    true);                                                              \
+  static unsigned funName(paramType paramName)
 
 /**
  * Introduces a benchmark function. Use with either one or two arguments.
@@ -251,7 +333,29 @@ auto doNotOptimizeAway(const T& datum) -> typename std::enable_if<
     name,                                                       \
     ACC_STRINGIZE(name),                                        \
     ACC_ARG_2_OR_1(1, ## __VA_ARGS__),                          \
-    ACC_ARG_1_OR_NONE(unsigned, ## __VA_ARGS__),                \
+    ACC_ONE_OR_NONE(unsigned, ## __VA_ARGS__),                  \
+    __VA_ARGS__)
+
+/**
+ * Like BENCHMARK above, but allows the user to return the actual
+ * number of iterations executed in the function body. This can be
+ * useful if the benchmark function doesn't know upfront how many
+ * iterations it's going to run or if it runs through a certain
+ * number of test cases, e.g.:
+ *
+ * BENCHMARK_MULTI(benchmarkSomething) {
+ *   std::vector<int> testCases { 0, 1, 1, 2, 3, 5 };
+ *   for (int c : testCases) {
+ *     doSomething(c);
+ *   }
+ *   return testCases.size();
+ * }
+ */
+#define BENCHMARK_MULTI(name, ...)                              \
+  BENCHMARK_MULTI_IMPL(                                         \
+    name,                                                       \
+    ACC_STRINGIZE(name),                                        \
+    ACC_ONE_OR_NONE(unsigned, ## __VA_ARGS__),                  \
     __VA_ARGS__)
 
 /**
@@ -259,7 +363,7 @@ auto doNotOptimizeAway(const T& datum) -> typename std::enable_if<
  * common for benchmarks that need a "problem size" in addition to
  * "number of iterations". Consider:
  *
- * void pushBack(uint n, size_t initialSize) {
+ * void pushBack(uint32_t n, size_t initialSize) {
  *   vector<int> v;
  *   BENCHMARK_SUSPEND {
  *     v.resize(initialSize);
@@ -276,8 +380,15 @@ auto doNotOptimizeAway(const T& datum) -> typename std::enable_if<
  * initial sizes of the vector. The framework will pass 0, 1000, and
  * 1000000 for initialSize, and the iteration count for n.
  */
-#define BENCHMARK_PARAM(name, param)                            \
+#define BENCHMARK_PARAM(name, param)                                    \
   BENCHMARK_NAMED_PARAM(name, param, param)
+
+/**
+ * Same as BENCHMARK_PARAM, but allows one to return the actual number of
+ * iterations that have been run.
+ */
+#define BENCHMARK_PARAM_MULTI(name, param)                              \
+  BENCHMARK_NAMED_PARAM_MULTI(name, param, param)
 
 /*
  * Like BENCHMARK_PARAM(), but allows a custom name to be specified for each
@@ -288,7 +399,7 @@ auto doNotOptimizeAway(const T& datum) -> typename std::enable_if<
  *
  * For example:
  *
- * void addValue(uint n, int64_t bucketSize, int64_t min, int64_t max) {
+ * void addValue(uint32_t n, int64_t bucketSize, int64_t min, int64_t max) {
  *   Histogram<int64_t> hist(bucketSize, min, max);
  *   int64_t num = min;
  *   for (unsigned i = 0; i < n; ++i) {
@@ -302,14 +413,27 @@ auto doNotOptimizeAway(const T& datum) -> typename std::enable_if<
  * BENCHMARK_NAMED_PARAM(addValue, 0_to_1000, 10, 0, 1000)
  * BENCHMARK_NAMED_PARAM(addValue, 5k_to_20k, 250, 5000, 20000)
  */
-#define BENCHMARK_NAMED_PARAM(name, param_name, ...)            \
-  BENCHMARK_IMPL(                                               \
-      ACC_CONCATENATE(name, ACC_CONCATENATE(_, param_name)),    \
-      ACC_STRINGIZE(name) "(" ACC_STRINGIZE(param_name) ")",    \
-      iters,                                                    \
-      unsigned,                                                 \
-      iters) {                                                  \
-    name(iters, ## __VA_ARGS__);                                \
+#define BENCHMARK_NAMED_PARAM(name, param_name, ...)                    \
+  BENCHMARK_IMPL(                                                       \
+      ACC_CONCATENATE(name, ACC_CONCATENATE(_, param_name)),            \
+      ACC_STRINGIZE(name) "(" ACC_STRINGIZE(param_name) ")",            \
+      iters,                                                            \
+      unsigned,                                                         \
+      iters) {                                                          \
+    name(iters, ## __VA_ARGS__);                                        \
+  }
+
+/**
+ * Same as BENCHMARK_NAMED_PARAM, but allows one to return the actual number
+ * of iterations that have been run.
+ */
+#define BENCHMARK_NAMED_PARAM_MULTI(name, param_name, ...)              \
+  BENCHMARK_MULTI_IMPL(                                                 \
+      ACC_CONCATENATE(name, ACC_CONCATENATE(_, param_name)),            \
+      ACC_STRINGIZE(name) "(" ACC_STRINGIZE(param_name) ")",            \
+      unsigned,                                                         \
+      iters) {                                                          \
+    return name(iters, ## __VA_ARGS__);                                 \
   }
 
 /**
@@ -341,42 +465,72 @@ auto doNotOptimizeAway(const T& datum) -> typename std::enable_if<
     name,                                                       \
     "%" ACC_STRINGIZE(name),                                    \
     ACC_ARG_2_OR_1(1, ## __VA_ARGS__),                          \
-    ACC_ARG_1_OR_NONE(unsigned, ## __VA_ARGS__),                \
+    ACC_ONE_OR_NONE(unsigned, ## __VA_ARGS__),                  \
+    __VA_ARGS__)
+
+/**
+ * Same as BENCHMARK_RELATIVE, but allows one to return the actual number
+ * of iterations that have been run.
+ */
+#define BENCHMARK_RELATIVE_MULTI(name, ...)                     \
+  BENCHMARK_MULTI_IMPL(                                         \
+    name,                                                       \
+    "%" ACC_STRINGIZE(name),                                    \
+    ACC_ONE_OR_NONE(unsigned, ## __VA_ARGS__),                  \
     __VA_ARGS__)
 
 /**
  * A combination of BENCHMARK_RELATIVE and BENCHMARK_PARAM.
  */
-#define BENCHMARK_RELATIVE_PARAM(name, param)                   \
+#define BENCHMARK_RELATIVE_PARAM(name, param)                           \
   BENCHMARK_RELATIVE_NAMED_PARAM(name, param, param)
+
+/**
+ * Same as BENCHMARK_RELATIVE_PARAM, but allows one to return the actual
+ * number of iterations that have been run.
+ */
+#define BENCHMARK_RELATIVE_PARAM_MULTI(name, param)                     \
+  BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(name, param, param)
 
 /**
  * A combination of BENCHMARK_RELATIVE and BENCHMARK_NAMED_PARAM.
  */
-#define BENCHMARK_RELATIVE_NAMED_PARAM(name, param_name, ...)   \
-  BENCHMARK_IMPL(                                               \
-      ACC_CONCATENATE(name, ACC_CONCATENATE(_, param_name)),    \
-      "%" ACC_STRINGIZE(name) "(" ACC_STRINGIZE(param_name) ")",\
-      iters,                                                    \
-      unsigned,                                                 \
-      iters) {                                                  \
-    name(iters, ## __VA_ARGS__);                                \
+#define BENCHMARK_RELATIVE_NAMED_PARAM(name, param_name, ...)           \
+  BENCHMARK_IMPL(                                                       \
+      ACC_CONCATENATE(name, ACC_CONCATENATE(_, param_name)),            \
+      "%" ACC_STRINGIZE(name) "(" ACC_STRINGIZE(param_name) ")",        \
+      iters,                                                            \
+      unsigned,                                                         \
+      iters) {                                                          \
+    name(iters, ## __VA_ARGS__);                                        \
+  }
+
+/**
+ * Same as BENCHMARK_RELATIVE_NAMED_PARAM, but allows one to return the
+ * actual number of iterations that have been run.
+ */
+#define BENCHMARK_RELATIVE_NAMED_PARAM_MULTI(name, param_name, ...)     \
+  BENCHMARK_MULTI_IMPL(                                                 \
+      ACC_CONCATENATE(name, ACC_CONCATENATE(_, param_name)),            \
+      "%" ACC_STRINGIZE(name) "(" ACC_STRINGIZE(param_name) ")",        \
+      unsigned,                                                         \
+      iters) {                                                          \
+    return name(iters, ## __VA_ARGS__);                                 \
   }
 
 /**
  * Draws a line of dashes.
  */
-#define BENCHMARK_DRAW_LINE()                                   \
-  static bool ACC_ANONYMOUS_VARIABLE(accBenchmarkUnused) = (    \
-    ::acc::addBenchmark(__FILENAME__, "-",                      \
-      []() -> unsigned { return 0; }),                          \
+#define BENCHMARK_DRAW_LINE()                                                \
+  static bool ACC_ANONYMOUS_VARIABLE(accBenchmarkUnused) = (                 \
+    ::acc::addBenchmark(__FILENAME__, "-", []() -> unsigned { return 0; }),  \
     true);
 
 /**
  * Allows execution of code that doesn't count torward the benchmark's
  * time budget. Example:
  *
- * BENCHMARK(insertVectorBegin, n) {
+ * BENCHMARK_START_GROUP(insertVectorBegin, n) {
  *   vector<int> v;
  *   BENCHMARK_SUSPEND {
  *     v.reserve(n);
@@ -386,8 +540,7 @@ auto doNotOptimizeAway(const T& datum) -> typename std::enable_if<
  *   }
  * }
  */
-#define BENCHMARK_SUSPEND                                       \
-  if (auto ACC_ANONYMOUS_VARIABLE(BENCHMARK_SUSPEND) =          \
-      ::acc::BenchmarkSuspender()) {}                           \
+#define BENCHMARK_SUSPEND                               \
+  if (auto ACC_ANONYMOUS_VARIABLE(BENCHMARK_SUSPEND) =  \
+      ::acc::BenchmarkSuspender()) {}                   \
   else
-

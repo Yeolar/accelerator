@@ -1,6 +1,6 @@
 /*
  * Copyright 2017 Facebook, Inc.
- * Copyright 2018 Yeolar
+ * Copyright 2017-present Yeolar
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
  */
 
 #pragma once
-
-/* These definitions are in a separate file so that they
- * may be included from C- as well as C++-based projects. */
 
 /**
  * Portable version check.
@@ -56,6 +53,12 @@
 #define ACC_HAS_FEATURE(...) __has_feature(__VA_ARGS__)
 #else
 #define ACC_HAS_FEATURE(...) 0
+#endif
+
+#if defined(__has_include)
+#define ACC_HAS_INCLUDE(...) __has_include(__VA_ARGS__)
+#else
+#define ACC_HAS_INCLUDE(...) 0
 #endif
 
 /* Define a convenience macro to test when address sanitizer is being used
@@ -98,27 +101,16 @@
  * Define a convenience macro to test when ASAN, UBSAN or TSAN sanitizer are
  * being used
  */
-#if defined(ACC_SANITIZE_ADDRESS) || defined(ACC_SANITIZE_THREAD) || \
-    defined(UNDEFINED_SANITIZER)
+#if defined(ACC_SANITIZE_ADDRESS) || defined(ACC_SANITIZE_THREAD)
 #define ACC_SANITIZE 1
 #endif
 
-/**
- * ASAN/MSAN/TSAN define pre-processor symbols:
- * ADDRESS_SANITIZER/MEMORY_SANITIZER/THREAD_SANITIZER.
- *
- * UBSAN doesn't define anything and makes it hard to
- * conditionally compile.
- *
- * The build system should define UNDEFINED_SANITIZER=1 when UBSAN is
- * used as folly whitelists some functions.
- */
-#if UNDEFINED_SANITIZER
+#if ACC_SANITIZE
 #define ACC_DISABLE_UNDEFINED_BEHAVIOR_SANITIZER(...) \
   __attribute__((no_sanitize(__VA_ARGS__)))
 #else
 #define ACC_DISABLE_UNDEFINED_BEHAVIOR_SANITIZER(...)
-#endif // UNDEFINED_SANITIZER
+#endif // ACC_SANITIZE
 
 /**
  * Macro for marking functions as having public visibility.
@@ -152,4 +144,11 @@
 #define ACC_ATTR_VISIBILITY_HIDDEN __attribute__((__visibility__("hidden")))
 #else
 #define ACC_ATTR_VISIBILITY_HIDDEN
+#endif
+
+// An attribute for marking symbols as weak, if supported
+#if ACC_HAVE_WEAK_SYMBOLS
+#define ACC_ATTR_WEAK __attribute__((__weak__))
+#else
+#define ACC_ATTR_WEAK
 #endif
