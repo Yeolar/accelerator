@@ -165,7 +165,6 @@ install(TARGETS accelerator_shared
 if(GTEST_FOUND)
     enable_testing()
     add_subdirectory(accelerator/test)
-    add_subdirectory(accelerator/compression/test)
     add_subdirectory(accelerator/io/test)
     add_subdirectory(accelerator/thread/test)
 endif()

@@ -522,9 +522,9 @@ void printResultComparison(
  * Draws a line of dashes.
  */
 #define BENCHMARK_DRAW_LINE()                                                \
-  static bool ACC_ANONYMOUS_VARIABLE(accBenchmarkUnused) = (                 \
-    ::acc::addBenchmark(__FILENAME__, "-", []() -> unsigned { return 0; }),  \
-    true);
+  static bool ACC_ANONYMOUS_VARIABLE(accBenchmarkUnused) =                   \
+      (::acc::addBenchmark(__FILE__, "-", []() -> unsigned { return 0; }),   \
+       true)
 
 /**
  * Allows execution of code that doesn't count torward the benchmark's
