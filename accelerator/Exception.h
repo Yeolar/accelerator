@@ -135,7 +135,7 @@ class TracingExceptionBase : public std::exception {
   typedef acc::TracingExceptionBase<ex_name##Tag> ex_name
 
 #define ACC_TRACING_THROW(E, ...) \
-  throw E(#E, " @(", __FILE__, ":", __LINE__, "): \"", ##__VA_ARGS__, "\"")
+  throw E(#E, " @(", __FILE__, ":", __LINE__, "): ", ##__VA_ARGS__)
 
 // logic error
 ACC_TRACING_EXCEPTION(LogicError);
