@@ -54,6 +54,7 @@
 
 #include "accelerator/Constexpr.h"
 #include "accelerator/Traits.h"
+#include "accelerator/Utility.h"
 
 namespace acc {
 
