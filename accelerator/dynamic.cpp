@@ -19,6 +19,7 @@
 
 #include <numeric>
 
+#include "accelerator/Format.h"
 #include "accelerator/Hash.h"
 
 namespace acc {
@@ -45,19 +46,20 @@ const char* dynamic::typeName() const {
 }
 
 TypeError::TypeError(const std::string& expected, dynamic::Type actual)
-    : std::runtime_error(to<std::string>(
-          "TypeError: expected dynamic type `", expected, "', but had type `",
-          dynamic::typeName(actual), "'")) {}
+    : std::runtime_error(sformat(
+          "TypeError: expected dynamic type `{}', but had type `{}'",
+          expected,
+          dynamic::typeName(actual))) {}
 
 TypeError::TypeError(
     const std::string& expected,
     dynamic::Type actual1,
     dynamic::Type actual2)
-    : std::runtime_error(to<std::string>(
-          "TypeError: expected dynamic types `", expected, "', but had types `",
+    : std::runtime_error(sformat(
+          "TypeError: expected dynamic types `{}, but had types `{}' and `{}'",
+          expected,
           dynamic::typeName(actual1),
-          "' and `",
-          dynamic::typeName(actual2), "'")) {}
+          dynamic::typeName(actual2))) {}
 
 TypeError::TypeError(const TypeError&) noexcept(
     std::is_nothrow_copy_constructible<std::runtime_error>::value) = default;
@@ -230,6 +232,11 @@ const dynamic* dynamic::get_ptr(dynamic const& idx) const& {
   }
 }
 
+[[noreturn]] static void throwOutOfRangeAtMissingKey(dynamic const& idx) {
+  auto msg = sformat("couldn't find key {} in dynamic object", idx.asString());
+  throw std::out_of_range(msg);
+}
+
 dynamic const& dynamic::at(dynamic const& idx) const& {
   if (auto* parray = get_nothrow<Array>()) {
     if (!idx.isInt()) {
@@ -242,8 +249,7 @@ dynamic const& dynamic::at(dynamic const& idx) const& {
   } else if (auto* pobject = get_nothrow<ObjectImpl>()) {
     auto it = pobject->find(idx);
     if (it == pobject->end()) {
-      throw std::out_of_range(to<std::string>(
-          "couldn't find key ", idx.asString(), " in dynamic object"));
+      throwOutOfRangeAtMissingKey(idx);
     }
     return it->second;
   } else {

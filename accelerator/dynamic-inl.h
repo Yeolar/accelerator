@@ -21,6 +21,7 @@
 
 #include "accelerator/CPortability.h"
 #include "accelerator/Conv.h"
+#include "accelerator/Format.h"
 #include "accelerator/Logging.h"
 #include "accelerator/Macro.h"
 #include "accelerator/detail/Iterators.h"
@@ -918,6 +919,88 @@ inline std::ostream& operator<<(std::ostream& out, dynamic const& d) {
 }
 
 //////////////////////////////////////////////////////////////////////
+
+// Secialization of FormatValue so dynamic objects can be formatted
+template <>
+class FormatValue<dynamic> {
+ public:
+  explicit FormatValue(const dynamic& val) : val_(val) { }
+
+  template <class FormatCallback>
+  void format(FormatArg& arg, FormatCallback& cb) const {
+    switch (val_.type()) {
+    case dynamic::NULLT:
+      FormatValue<std::nullptr_t>(nullptr).format(arg, cb);
+      break;
+    case dynamic::BOOL:
+      FormatValue<bool>(val_.asBool()).format(arg, cb);
+      break;
+    case dynamic::INT64:
+      FormatValue<int64_t>(val_.asInt()).format(arg, cb);
+      break;
+    case dynamic::STRING:
+      FormatValue<std::string>(val_.asString()).format(arg, cb);
+      break;
+    case dynamic::DOUBLE:
+      FormatValue<double>(val_.asDouble()).format(arg, cb);
+      break;
+    case dynamic::ARRAY:
+      FormatValue(val_.at(arg.splitIntKey())).format(arg, cb);
+      break;
+    case dynamic::OBJECT:
+      FormatValue(val_.at(arg.splitKey().toString())).format(arg, cb);
+      break;
+    }
+  }
+
+ private:
+  const dynamic& val_;
+};
+
+template <class V>
+class FormatValue<detail::DefaultValueWrapper<dynamic, V>> {
+ public:
+  explicit FormatValue(
+      const detail::DefaultValueWrapper<dynamic, V>& val)
+    : val_(val) { }
+
+  template <class FormatCallback>
+  void format(FormatArg& arg, FormatCallback& cb) const {
+    auto& c = val_.container;
+    switch (c.type()) {
+    case dynamic::NULLT:
+    case dynamic::BOOL:
+    case dynamic::INT64:
+    case dynamic::STRING:
+    case dynamic::DOUBLE:
+      FormatValue<dynamic>(c).format(arg, cb);
+      break;
+    case dynamic::ARRAY:
+      {
+        int key = arg.splitIntKey();
+        if (key >= 0 && size_t(key) < c.size()) {
+          FormatValue<dynamic>(c.at(key)).format(arg, cb);
+        } else{
+          FormatValue<V>(val_.defaultValue).format(arg, cb);
+        }
+      }
+      break;
+    case dynamic::OBJECT:
+      {
+        auto pos = c.find(arg.splitKey());
+        if (pos != c.items().end()) {
+          FormatValue<dynamic>(pos->second).format(arg, cb);
+        } else {
+          FormatValue<V>(val_.defaultValue).format(arg, cb);
+        }
+      }
+      break;
+    }
+  }
+
+ private:
+  const detail::DefaultValueWrapper<dynamic, V>& val_;
+};
 
 } // namespace acc
 

@@ -24,6 +24,7 @@
 
 #include "accelerator/Exception.h"
 #include "accelerator/FileUtil.h"
+#include "accelerator/Format.h"
 #include "accelerator/Logging.h"
 
 namespace acc {
@@ -39,7 +40,8 @@ File::File(const char* name, int flags, mode_t mode)
   : fd_(::open(name, flags, mode))
   , ownsFd_(false) {
   if (fd_ == -1) {
-    throwSystemError("open(\"", name, "\", ", flags, ", ", mode, ") failed");
+    throwSystemError(acc::sformat("open(\"{}\", {:#o}, 0{:#o}) failed",
+                                  name, flags, mode));
   }
   ownsFd_ = true;
 }

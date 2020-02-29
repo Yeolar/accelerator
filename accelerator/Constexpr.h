@@ -55,11 +55,25 @@ template <typename T>
 constexpr T constexpr_log2_(T a, T e) {
   return e == T(1) ? a : constexpr_log2_(a + T(1), e / T(2));
 }
+
+template <typename T>
+constexpr T constexpr_square_(T t) {
+  return t * t;
+}
 } // namespace detail
 
 template <typename T>
 constexpr T constexpr_log2(T t) {
   return detail::constexpr_log2_(T(0), t);
+}
+
+template <typename T>
+constexpr T constexpr_pow(T base, std::size_t exp) {
+  return exp == 0
+      ? T(1)
+      : exp == 1 ? base
+                 : detail::constexpr_square_(constexpr_pow(base, exp / 2)) *
+              (exp % 2 ? base : T(1));
 }
 
 namespace detail {

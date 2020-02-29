@@ -60,6 +60,13 @@ namespace gflags {
 #define ACC_CPP14_CONSTEXPR inline
 #endif
 
+#define ACC_STORAGE_CONSTEXPR constexpr
+#if ACC_USE_CPP14_CONSTEXPR
+#define ACC_STORAGE_CPP14_CONSTEXPR constexpr
+#else
+#define ACC_STORAGE_CPP14_CONSTEXPR
+#endif
+
 //////////////////////////////////////////////////////////////////////
 
 inline void asm_volatile_memory() {
