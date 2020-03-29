@@ -277,7 +277,7 @@ class NodeRecycler<NodeType, NodeAlloc, typename std::enable_if<
     // happens, the recycler will usually still get cleaned when
     // such a race doesn't happen. The worst case is the recycler will
     // eventually get deleted along with the skiplist.
-    if (LIKELY(!dirty_.load(std::memory_order_relaxed) || refs() > 1)) {
+    if (ACC_LIKELY(!dirty_.load(std::memory_order_relaxed) || refs() > 1)) {
       return refs_.fetch_add(-1, std::memory_order_relaxed);
     }
 

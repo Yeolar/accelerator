@@ -451,7 +451,7 @@ struct AtomicUnorderedInsertMap {
   /// tries, starting from the specified slot.  This is pulled out so we
   /// can specialize it differently during deterministic testing
   IndexType allocationAttempt(IndexType start, IndexType tries) const {
-    if (LIKELY(tries < 8 && start + tries < numSlots_)) {
+    if (ACC_LIKELY(tries < 8 && start + tries < numSlots_)) {
       return IndexType(start + tries);
     } else {
       IndexType rv;
