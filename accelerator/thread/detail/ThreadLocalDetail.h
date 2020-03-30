@@ -427,8 +427,8 @@ struct StaticMeta : StaticMetaBase {
   ACC_ALWAYS_INLINE static ElementWrapper& get(EntryID* ent) {
     uint32_t id = ent->getOrInvalid();
 #ifdef ACC_TLD_USE_ACC_TLS
-    static ACC_TLS ThreadEntry* threadEntry{};
-    static ACC_TLS size_t capacity{};
+    static __thread ThreadEntry* threadEntry{};
+    static __thread size_t capacity{};
     // Eliminate as many branches and as much extra code as possible in the
     // cached fast path, leaving only one branch here and one indirection below.
     if (ACC_UNLIKELY(capacity <= id)) {
@@ -465,7 +465,7 @@ struct StaticMeta : StaticMetaBase {
     if (!threadEntry) {
       ThreadEntryList* threadEntryList = StaticMeta::getThreadEntryList();
 #ifdef ACC_TLD_USE_ACC_TLS
-      static ACC_TLS ThreadEntry threadEntrySingleton;
+      static __thread ThreadEntry threadEntrySingleton;
       threadEntry = &threadEntrySingleton;
 #else
       threadEntry = new ThreadEntry();

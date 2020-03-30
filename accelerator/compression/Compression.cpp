@@ -770,8 +770,8 @@ std::unique_ptr<IOBuf> LZ4Codec::doCompress(const IOBuf* data) {
   }
 #endif
 
-  CHECK_GE(n, 0);
-  CHECK_LE(n, out->capacity());
+  ACCCHECK_GE(n, 0);
+  ACCCHECK_LE(n, out->capacity());
 
   out->append(n);
   return out;
@@ -1063,7 +1063,7 @@ const char* IOBufSnappySource::Peek(size_t* len) {
 }
 
 void IOBufSnappySource::Skip(size_t n) {
-  CHECK_LE(n, available_);
+  ACCCHECK_LE(n, available_);
   cursor_.skip(n);
   available_ -= n;
 }
@@ -1118,7 +1118,7 @@ std::unique_ptr<IOBuf> SnappyCodec::doCompress(const IOBuf* data) {
 
   size_t n = snappy::Compress(&source, &sink);
 
-  CHECK_LE(n, out->capacity());
+  ACCCHECK_LE(n, out->capacity());
   out->append(n);
   return out;
 }
