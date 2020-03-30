@@ -16,18 +16,19 @@
 
 #include "accelerator/SystemUtil.h"
 
-namespace acc {
-
-#ifdef __linux__
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
+#ifdef __linux__
+
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
 #include <sched.h>
 #include <sys/sysinfo.h>
+
+namespace acc {
 
 bool setCpuAffinity(int cpu, pid_t pid) {
   cpu_set_t mask;
@@ -86,7 +87,11 @@ ProcessMemory getProcessMemory() {
 
 #endif
 
+} // namespace acc
+
 #include <sys/statvfs.h>
+
+namespace acc {
 
 FsInfo getFsInfo(const char* path) {
   FsInfo info;

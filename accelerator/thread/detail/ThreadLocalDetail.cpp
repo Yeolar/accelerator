@@ -73,7 +73,7 @@ StaticMetaBase::StaticMetaBase(ThreadEntry* (*threadEntry)())
 
 ThreadEntryList* StaticMetaBase::getThreadEntryList() {
 #ifdef ACC_TLD_USE_ACC_TLS
-  static ACC_TLS ThreadEntryList threadEntryListSingleton;
+  static __thread ThreadEntryList threadEntryListSingleton;
   return &threadEntryListSingleton;
 #else
   class PthreadKey {
