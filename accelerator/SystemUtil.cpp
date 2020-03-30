@@ -85,9 +85,9 @@ ProcessMemory getProcessMemory() {
   return mem;
 }
 
-#endif
-
 } // namespace acc
+
+#endif
 
 #include <sys/statvfs.h>
 
