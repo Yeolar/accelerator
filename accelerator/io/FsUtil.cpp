@@ -137,6 +137,18 @@ void createDirectory(const File& dir, const Path& child) {
   }
 }
 
+void createDirectories(const Path& path) {
+  Path p = path.parent();
+  if (!p.empty()) {
+    if (!p.exists()) {
+      createDirectories(p);
+    } else if (!p.isDirectory()) {
+      throwSystemError(path, " not directory");
+    }
+  }
+  createDirectory(path);
+}
+
 File openDirectory(const Path& path) {
   assert(!path.empty());
   int r = ::mkdir(path.c_str(), 0755);
