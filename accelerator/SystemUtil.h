@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <string>
 #include <unistd.h>
 
 namespace acc {
@@ -23,6 +24,8 @@ namespace acc {
 inline int getCpuNum() {
   return sysconf(_SC_NPROCESSORS_CONF);
 }
+
+std::string getProcessName();
 
 #ifdef __linux__
 

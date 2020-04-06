@@ -20,6 +20,16 @@
 #include <cstdlib>
 #include <cstring>
 
+extern char* __progname;
+
+namespace acc {
+
+std::string getProcessName() {
+  return __progname;
+}
+
+} // namespace acc
+
 #ifdef __linux__
 
 #ifndef _GNU_SOURCE
