@@ -15,7 +15,7 @@ set(VERSION_PATCH 0)
 # Required packages
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package(Threads REQUIRED)
-find_package(Boost REQUIRED COMPONENTS context regex thread)
+find_package(Boost REQUIRED COMPONENTS random regex thread)
 find_package(DoubleConversion REQUIRED)
 find_package(GFlags REQUIRED)
 

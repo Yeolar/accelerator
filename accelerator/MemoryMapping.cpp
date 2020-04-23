@@ -21,6 +21,7 @@
 #include <functional>
 #include <system_error>
 #include <utility>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/types.h>
