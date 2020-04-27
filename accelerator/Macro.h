@@ -75,52 +75,6 @@
 #define ACC_STRINGIZE(x) #x
 #define ACC_STRINGIZE2(x) ACC_STRINGIZE(x)
 
-/**
- * The ACC_NARG macro evaluates to the number of arguments that have been
- * passed to it.
- *
- * Laurent Deniau, "__VA_NARG__," 17 January 2006, <comp.std.c> (29 November 2007).
- */
-#define ACC_NARG_(dummy, _9, _8, _7, _6, _5, _4, _3, _2, _1, _0, ...) _0
-#define ACC_NARG(...) \
-        ACC_NARG_(dummy, ##__VA_ARGS__, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
-
-/**
- * APPLYXn variadic X-Macro.
- */
-#define ACC_APPLYX0(X, ...)
-#define ACC_APPLYX1(X, a, ...) X(a) ACC_APPLYX0(X, __VA_ARGS__)
-#define ACC_APPLYX2(X, a, ...) X(a) ACC_APPLYX1(X, __VA_ARGS__)
-#define ACC_APPLYX3(X, a, ...) X(a) ACC_APPLYX2(X, __VA_ARGS__)
-#define ACC_APPLYX4(X, a, ...) X(a) ACC_APPLYX3(X, __VA_ARGS__)
-#define ACC_APPLYX5(X, a, ...) X(a) ACC_APPLYX4(X, __VA_ARGS__)
-#define ACC_APPLYX6(X, a, ...) X(a) ACC_APPLYX5(X, __VA_ARGS__)
-#define ACC_APPLYX7(X, a, ...) X(a) ACC_APPLYX6(X, __VA_ARGS__)
-#define ACC_APPLYX8(X, a, ...) X(a) ACC_APPLYX7(X, __VA_ARGS__)
-#define ACC_APPLYX9(X, a, ...) X(a) ACC_APPLYX8(X, __VA_ARGS__)
-#define ACC_APPLYXi(X, n, ...) ACC_APPLYX##n(X, __VA_ARGS__)
-#define ACC_APPLYX_(X, n, ...) ACC_APPLYXi(X, n, __VA_ARGS__)
-
-#define ACC_APPLYXn(X, ...) ACC_APPLYX_(X, ACC_NARG(__VA_ARGS__), __VA_ARGS__)
-
-/**
- * APPLYFn variadic F-Macro.
- */
-#define ACC_APPLYF0(x, ...)
-#define ACC_APPLYF1(x, A, ...) A(x) ACC_APPLYF0(x, __VA_ARGS__)
-#define ACC_APPLYF2(x, A, ...) A(x) ACC_APPLYF1(x, __VA_ARGS__)
-#define ACC_APPLYF3(x, A, ...) A(x) ACC_APPLYF2(x, __VA_ARGS__)
-#define ACC_APPLYF4(x, A, ...) A(x) ACC_APPLYF3(x, __VA_ARGS__)
-#define ACC_APPLYF5(x, A, ...) A(x) ACC_APPLYF4(x, __VA_ARGS__)
-#define ACC_APPLYF6(x, A, ...) A(x) ACC_APPLYF5(x, __VA_ARGS__)
-#define ACC_APPLYF7(x, A, ...) A(x) ACC_APPLYF6(x, __VA_ARGS__)
-#define ACC_APPLYF8(x, A, ...) A(x) ACC_APPLYF7(x, __VA_ARGS__)
-#define ACC_APPLYF9(x, A, ...) A(x) ACC_APPLYF8(x, __VA_ARGS__)
-#define ACC_APPLYFi(x, n, ...) ACC_APPLYF##n(x, __VA_ARGS__)
-#define ACC_APPLYF_(x, n, ...) ACC_APPLYFi(x, n, __VA_ARGS__)
-
-#define ACC_APPLYFn(x, ...) ACC_APPLYF_(x, ACC_NARG(__VA_ARGS__), __VA_ARGS__)
-
 ////////////////////////////////////////////////////////////
 
 // Generalize warning push/pop.
