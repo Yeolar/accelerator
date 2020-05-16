@@ -98,7 +98,8 @@ class ACCLogger : public BaseLogger {
   (!(condition)) ? (void)0 : ACCPLOG(severity)
 
 #define ACCCHECK(condition) \
-  (condition) ? (void)0 : ACCLOG(FATAL) << "Check " #condition " failed. "
+  (condition) ? (void)0 : ACCLOG(FATAL) << \
+  "Check " #condition " failed in '" __PRETTY_FUNCTION__ "'. "
 #define ACCCHECK_LT(a, b) ACCCHECK((a) <  (b))
 #define ACCCHECK_LE(a, b) ACCCHECK((a) <= (b))
 #define ACCCHECK_GT(a, b) ACCCHECK((a) >  (b))

@@ -94,33 +94,24 @@ void checkFopenErrorExplicit(FILE* fp, int savedErrno, Args&&... args) {
   }
 }
 
-/**
- * If cond is not true, raise an exception of type E.  E must have a ctor that
- * works with const char* (a description of the failure).
- */
-#define ACC_CHECK_THROW(cond, E)                                            \
-  do {                                                                      \
-    if (!(cond)) {                                                          \
-      throw E("Check failed: " #cond " @(", __FILE__, ":", __LINE__, ")");  \
-    }                                                                       \
-  } while (0)
-
 //////////////////////////////////////////////////////////////////////
 
 std::vector<std::string> recordBacktrace();
 
 void recordBacktraceToStr(std::string& out);
 
-template <class Tag = void>
-class TracingExceptionBase : public std::exception {
+template <bool Tracing, class Tag = void>
+class ExceptionBase : public std::exception {
  public:
   template <class... Args>
-  explicit TracingExceptionBase(Args&&... args)
+  explicit ExceptionBase(Args&&... args)
       : msg_(to<std::string>(std::forward<Args>(args)...)) {
-    recordBacktraceToStr(msg_);
+    if (Tracing) {
+      recordBacktraceToStr(msg_);
+    }
   }
 
-  virtual ~TracingExceptionBase() {}
+  virtual ~ExceptionBase() {}
 
   virtual const char* what() const noexcept {
     return msg_.c_str();
@@ -130,12 +121,11 @@ class TracingExceptionBase : public std::exception {
   std::string msg_;
 };
 
+typedef acc::ExceptionBase<false> Exception;
+
 #define ACC_TRACING_EXCEPTION(ex_name)                    \
   struct ex_name##Tag {};                                 \
-  typedef acc::TracingExceptionBase<ex_name##Tag> ex_name
-
-#define ACC_TRACING_THROW(E, ...) \
-  throw E(#E, " @(", __FILE__, ":", __LINE__, "): ", ##__VA_ARGS__)
+  typedef acc::ExceptionBase<true, ex_name##Tag> ex_name
 
 // logic error
 ACC_TRACING_EXCEPTION(LogicError);
@@ -150,5 +140,27 @@ ACC_TRACING_EXCEPTION(RangeError);
 ACC_TRACING_EXCEPTION(OverflowError);
 ACC_TRACING_EXCEPTION(UnderflowError);
 ACC_TRACING_EXCEPTION(NotImplementedError);
+
+#define ACC_CODE_POS __FILE__ ":", __LINE__, ":'" __PRETTY_FUNCTION__ "'"
+
+#define ACC_THROW(...) \
+  throw acc::Exception("@(", ACC_CODE_POS, ") ", ##__VA_ARGS__)
+
+#define ACC_TRACING_THROW(E, ...) \
+  throw E(#E, " @(", ACC_CODE_POS, ") ", ##__VA_ARGS__)
+
+/**
+ * If cond is not true, raise an exception of type E.  E must have a ctor that
+ * works with const char* (a description of the failure).
+ */
+#define ACC_CHECK_THROW(cond, E, ...)                           \
+  do {                                                          \
+    if (!(cond)) {                                              \
+      throw E("Check failed: " #cond " @(", ACC_CODE_POS, ") ", \
+              ##__VA_ARGS__);                                   \
+    }                                                           \
+  } while (0)
+
+#undef ACC_CODE_POS
 
 } // namespace acc
