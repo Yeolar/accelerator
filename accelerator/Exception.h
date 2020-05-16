@@ -141,7 +141,7 @@ ACC_TRACING_EXCEPTION(OverflowError);
 ACC_TRACING_EXCEPTION(UnderflowError);
 ACC_TRACING_EXCEPTION(NotImplementedError);
 
-#define ACC_CODE_POS __FILE__ ":", __LINE__, ":'" __PRETTY_FUNCTION__ "'"
+#define ACC_CODE_POS __FILE__, ":", __LINE__, ":'", __PRETTY_FUNCTION__, "'"
 
 #define ACC_THROW(...) \
   throw acc::Exception("@(", ACC_CODE_POS, ") ", ##__VA_ARGS__)
