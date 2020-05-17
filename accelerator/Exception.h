@@ -141,26 +141,24 @@ ACC_TRACING_EXCEPTION(OverflowError);
 ACC_TRACING_EXCEPTION(UnderflowError);
 ACC_TRACING_EXCEPTION(NotImplementedError);
 
-#define ACC_CODE_POS __FILE__, ":", __LINE__, ":'", __PRETTY_FUNCTION__, "'"
+#define ACC_CODE_POS \
+  "@(", __FILE__, ":", __LINE__, ":'", __PRETTY_FUNCTION__, "') "
 
 #define ACC_THROW(...) \
-  throw acc::Exception("@(", ACC_CODE_POS, ") ", ##__VA_ARGS__)
+  throw acc::Exception(ACC_CODE_POS, ##__VA_ARGS__)
 
 #define ACC_TRACING_THROW(E, ...) \
-  throw E(#E, " @(", ACC_CODE_POS, ") ", ##__VA_ARGS__)
+  throw E(#E, ACC_CODE_POS, ##__VA_ARGS__)
 
 /**
  * If cond is not true, raise an exception of type E.  E must have a ctor that
  * works with const char* (a description of the failure).
  */
-#define ACC_CHECK_THROW(cond, E, ...)                           \
-  do {                                                          \
-    if (!(cond)) {                                              \
-      throw E("Check failed: " #cond " @(", ACC_CODE_POS, ") ", \
-              ##__VA_ARGS__);                                   \
-    }                                                           \
+#define ACC_CHECK_THROW(cond, E, ...)                               \
+  do {                                                              \
+    if (!(cond)) {                                                  \
+      throw E("Check failed: " #cond, ACC_CODE_POS, ##__VA_ARGS__); \
+    }                                                               \
   } while (0)
-
-#undef ACC_CODE_POS
 
 } // namespace acc
