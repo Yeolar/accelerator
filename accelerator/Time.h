@@ -54,6 +54,13 @@ inline struct timeval toTimeval(uint64_t t) {
   };
 }
 
+inline struct timespec toTimespec(uint64_t t) {
+  return {
+    time_t(t / 1000000000),
+    long(t % 1000000000)
+  };
+}
+
 struct StageTimestamp {
   int stage{INT_MIN};
   uint64_t stamp{0};
