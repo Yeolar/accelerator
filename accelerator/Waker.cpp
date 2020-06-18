@@ -25,15 +25,19 @@
 namespace acc {
 
 Waker::Waker() {
-  if (
 #if ACC_HAVE_PIPE2
-      ::pipe2(pipeFds_, O_CLOEXEC | O_NONBLOCK)
-#else
-      ::pipe(pipeFds_)
-#endif
-      == -1) {
-    ACCPLOG(ERROR) << "pipe2 failed";
+  if (::pipe2(pipeFds_, O_CLOEXEC | O_NONBLOCK) == -1) {
+    ACCPLOG(FATAL) << "pipe2 failed";
   }
+#else
+  if (::pipe(pipeFds_) == -1) {
+    ACCPLOG(FATAL) << "pipe failed";
+  }
+  int flags = fcntl(pipeFds_[0], F_GETFL, 0);
+  if (fcntl(pipeFds_[0], F_SETFL, flags | O_NONBLOCK) == -1) {
+    ACCPLOG(FATAL) << "fcntl set O_NONBLOCK failed";
+  }
+#endif
 }
 
 void Waker::wake() const {

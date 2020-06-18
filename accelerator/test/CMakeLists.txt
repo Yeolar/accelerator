@@ -4,6 +4,7 @@ set(ACCELERATOR_BASE_TEST_SRCS
     Base64Test.cpp
     FixedStreamTest.cpp
     LoggingTest.cpp
+    MonitorTest.cpp
     PathTest.cpp
     ReflectObjectTest.cpp
     SingletonTest.cpp
@@ -18,6 +19,7 @@ foreach(test_src ${ACCELERATOR_BASE_TEST_SRCS})
 endforeach()
 
 set(ACCELERATOR_BASE_BENCHMARK_SRCS
+    MonitorBenchmark.cpp
     TimeBenchmark.cpp
 )
 
