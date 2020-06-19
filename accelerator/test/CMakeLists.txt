@@ -2,6 +2,7 @@
 
 set(ACCELERATOR_BASE_TEST_SRCS
     Base64Test.cpp
+    csonTest.cpp
     FixedStreamTest.cpp
     LoggingTest.cpp
     MonitorTest.cpp
