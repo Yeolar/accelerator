@@ -47,11 +47,11 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 # Link libraries
 link_libraries(
-    ${CMAKE_THREAD_LIBS_INIT}
-    ${CMAKE_DL_LIBS}
     ${Boost_LIBRARIES}
     ${DOUBLE_CONVERSION_LIBRARY}
     ${GFLAGS_LIBRARIES}
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${CMAKE_DL_LIBS}
 )
 if(BZIP2_FOUND)
   link_libraries(${BZIP2_LIBRARIES})
