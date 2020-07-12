@@ -137,8 +137,7 @@ template <
         (boost::has_trivial_destructor<Key>::value &&
          boost::has_trivial_destructor<Value>::value),
     typename IndexType = uint32_t,
-    typename Allocator = MMapAlloc,
-    bool SkipSlotsConstruction = false>
+    typename Allocator = MMapAlloc>
 
 struct AtomicUnorderedInsertMap {
 
@@ -228,12 +227,10 @@ struct AtomicUnorderedInsertMap {
     slotMask_ = acc::nextPowTwo(capacity * 4) - 1;
     mmapRequested_ = sizeof(Slot) * capacity;
     slots_ = reinterpret_cast<Slot*>(allocator_.allocate(mmapRequested_));
-    if (!SkipSlotsConstruction) {
-      zeroFillSlots();
-      // mark the zero-th slot as in-use but not valid, since that happens
-      // to be our nil value
-      slots_[0].stateUpdate(EMPTY, CONSTRUCTING);
-    }
+    zeroFillSlots();
+    // mark the zero-th slot as in-use but not valid, since that happens
+    // to be our nil value
+    slots_[0].stateUpdate(EMPTY, CONSTRUCTING);
   }
 
   ~AtomicUnorderedInsertMap() {
