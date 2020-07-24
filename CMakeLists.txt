@@ -45,6 +45,8 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 
+set(ACC_USE_WITH_FOLLY ON)
+
 # Link libraries
 link_libraries(
     ${Boost_LIBRARIES}

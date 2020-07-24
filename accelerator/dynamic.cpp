@@ -286,7 +286,11 @@ std::size_t dynamic::hash() const {
     // Accumulate using addition instead of using hash_range (as in the ARRAY
     // case), as we need a commutative hash operation since unordered_map's
     // iteration order is unspecified.
+#ifndef ACC_USE_WITH_FOLLY
     auto h = std::hash<std::pair<dynamic, dynamic>>{};
+#else
+    auto h = astd::hash<std::pair<dynamic, dynamic>>{};
+#endif
     return std::accumulate(
         items().begin(),
         items().end(),

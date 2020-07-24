@@ -15,6 +15,9 @@
 #cmakedefine ACC_HAVE_PREADV 1
 #cmakedefine ACC_HAVE_PWRITEV 1
 
+/* folly compatible */
+#cmakedefine ACC_USE_WITH_FOLLY 1
+
 /* gflags */
 
 #cmakedefine ACC_GFLAGS_NAMESPACE @ACC_GFLAGS_NAMESPACE@

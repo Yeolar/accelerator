@@ -55,8 +55,13 @@ namespace std {
 template <>
 struct hash<acc::Uri> {
   std::size_t operator()(const acc::Uri& k) const {
+#ifndef ACC_USE_WITH_FOLLY
     return std::hash<acc::uri_detail::UriTuple>{}(
         acc::uri_detail::as_tuple(k));
+#else
+    return astd::hash<acc::uri_detail::UriTuple>{}(
+        acc::uri_detail::as_tuple(k));
+#endif
   }
 };
 

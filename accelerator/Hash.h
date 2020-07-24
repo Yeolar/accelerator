@@ -25,6 +25,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "accelerator/accelerator-config.h"
 #include "accelerator/Bits.h"
 #include "accelerator/SpookyHashV2.h"
 #include "accelerator/Tuple.h"
@@ -533,6 +534,8 @@ struct TupleHasher<0, Ts...> {
 
 } // namespace acc
 
+#ifndef ACC_USE_WITH_FOLLY
+
 // Custom hash functions.
 namespace std {
 // Hash function for pairs. Requires default hash functions for both
@@ -557,3 +560,36 @@ struct hash<std::tuple<Ts...>> {
   }
 };
 } // namespace std
+
+#else
+
+// Custom hash functions.
+namespace astd {
+
+template <typename...>
+struct hash;
+
+// Hash function for pairs. Requires default hash functions for both
+// items in the pair.
+template <typename T1, typename T2>
+struct hash<std::pair<T1, T2>> {
+  size_t operator()(const std::pair<T1, T2>& x) const {
+    return acc::hash::hash_combine(x.first, x.second);
+  }
+};
+
+// Hash function for tuples. Requires default hash functions for all types.
+template <typename... Ts>
+struct hash<std::tuple<Ts...>> {
+  size_t operator()(std::tuple<Ts...> const& key) const {
+    acc::TupleHasher<
+        sizeof...(Ts) - 1, // start index
+        Ts...>
+        hasher;
+
+    return hasher(key);
+  }
+};
+} // namespace astd
+
+#endif
