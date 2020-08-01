@@ -11,5 +11,7 @@ add_library(accelerator_thread OBJECT
   ${ACCELERATOR_THREAD_DETAIL_SRCS}
 )
 
-install(FILES ${ACCELERATOR_THREAD_HDRS} DESTINATION include/accelerator/thread)
-install(FILES ${ACCELERATOR_THREAD_DETAIL_HDRS} DESTINATION include/accelerator/thread/detail)
+install(FILES ${ACCELERATOR_THREAD_HDRS}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/accelerator/thread)
+install(FILES ${ACCELERATOR_THREAD_DETAIL_HDRS}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/accelerator/thread/detail)

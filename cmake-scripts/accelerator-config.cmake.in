@@ -1,0 +1,23 @@
+@PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
+
+set_and_check(accelerator_INCLUDE_DIR "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(Boost_USE_MULTITHREADED TRUE)
+
+find_dependency(Threads REQUIRED)
+find_dependency(Boost REQUIRED COMPONENTS random regex thread)
+find_dependency(DoubleConversion REQUIRED)
+find_dependency(GFlags REQUIRED)
+find_dependency(BZip2)
+find_dependency(LZ4)
+find_dependency(LibLZMA)
+find_dependency(Snappy)
+find_dependency(ZLIB)
+find_dependency(Zstd)
+
+unset(CMAKE_THREAD_PREFER_PTHREAD)
+unset(Boost_USE_MULTITHREADED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/accelerator-targets.cmake")

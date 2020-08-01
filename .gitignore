@@ -35,4 +35,5 @@
 *.app
 
 /_build/
+/_deps/
 /accelerator/accelerator-config.h
