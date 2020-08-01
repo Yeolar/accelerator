@@ -140,7 +140,7 @@ add_library(accelerator
 )
 
 install(TARGETS accelerator
-  EXPORT ${PROJECT_NAME}-targets
+  EXPORT accelerator-targets
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
@@ -158,22 +158,22 @@ endif()
 include(CMakePackageConfigHelpers)
 
 install(
-  EXPORT ${PROJECT_NAME}-targets
-  NAMESPACE ${PROJECT_NAME}::
-  FILE ${PROJECT_NAME}-targets.cmake
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+  EXPORT accelerator-targets
+  NAMESPACE accelerator::
+  FILE accelerator-targets.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/accelerator
 )
 
 configure_package_config_file(
-  ${CMAKE_MODULE_PATH}/${PROJECT_NAME}-config.cmake.in
-  ${PROJECT_NAME}-config.cmake
-  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+  ${CMAKE_MODULE_PATH}/accelerator-config.cmake.in
+  accelerator-config.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/accelerator
   NO_CHECK_REQUIRED_COMPONENTS_MACRO
-  PATH_VARS CMAKE_INSTALL_INCLUDEDIR CMAKE_INSTALL_LIBDIR
+  PATH_VARS CMAKE_INSTALL_INCLUDEDIR
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/accelerator-config.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/accelerator
 )
 
 # Pack
