@@ -104,6 +104,8 @@ find_path(GMOCK_INCLUDE_DIR gmock/gmock.h
 )
 mark_as_advanced(GMOCK_INCLUDE_DIR)
 
+include_directories(${GMOCK_INCLUDE_DIR})
+
 if(MSVC AND GMOCK_MSVC_SEARCH STREQUAL "MD")
   # The provided /MD project files for Google Mock add -md suffixes to the
   # library names.
