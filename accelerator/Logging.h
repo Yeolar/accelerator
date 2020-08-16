@@ -110,6 +110,7 @@ class ACCLogger : public BaseLogger {
 #define ACCPCHECK(condition) \
   ACCCHECK(condition) << ::acc::errnoStr(errno) << ", "
 
+#ifndef DCHECK
 #ifndef NDEBUG
 #define DCHECK(condition) ACCCHECK(condition)
 #define DCHECK_LT(a, b)   ACCCHECK_LT(a, b)
@@ -126,6 +127,7 @@ class ACCLogger : public BaseLogger {
 #define DCHECK_GE(a, b)   while (false) ACCCHECK_GE(a, b)
 #define DCHECK_EQ(a, b)   while (false) ACCCHECK_EQ(a, b)
 #define DCHECK_NE(a, b)   while (false) ACCCHECK_NE(a, b)
+#endif
 #endif
 
 #define ACCCOST_SCOPE(severity, threshold) \
