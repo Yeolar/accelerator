@@ -26,6 +26,7 @@
 #include <climits>
 #include <cstddef>
 #include <cstring>
+#include <functional>
 #include <iosfwd>
 #include <iterator>
 #include <stdexcept>

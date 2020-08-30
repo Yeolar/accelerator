@@ -17,6 +17,7 @@
 
 #include "accelerator/Checksum.h"
 
+#include <algorithm>
 #include <stdexcept>
 #include <immintrin.h>
 #include <nmmintrin.h>

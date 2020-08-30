@@ -18,6 +18,8 @@
 
 #include <queue>
 
+#include <boost/thread/shared_mutex.hpp>
+
 #include "accelerator/thread/Synchronized.h"
 
 namespace acc {
@@ -57,7 +59,7 @@ class LockedQueue {
   }
 
  private:
-  Synchronized<Queue> queue_;
+  Synchronized<Queue, boost::shared_mutex> queue_;
 };
 
 } // namespace acc

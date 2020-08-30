@@ -18,6 +18,8 @@
 
 #include <map>
 
+#include <boost/thread/shared_mutex.hpp>
+
 #include "accelerator/thread/Synchronized.h"
 
 namespace acc {
@@ -96,7 +98,7 @@ class LockedMap {
   }
 
  private:
-  Synchronized<Map> map_;
+  Synchronized<Map, boost::shared_mutex> map_;
 };
 
 } // namespace acc
